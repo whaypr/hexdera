@@ -81,6 +81,7 @@ type Msg
     | SetMaxSteps Demo Int
     | InsertObstacle Demo HexGrid.Point
     | RemoveObstacle Demo HexGrid.Point
+    | KeyPressDemo String String
 
 
 forceGet : comparable -> Dict.Dict comparable v -> v
@@ -134,6 +135,49 @@ update msg model =
             in
             Dict.insert nextDemo.name nextDemo model
 
+        KeyPressDemo demoName key ->
+            let
+                prevDemo =
+                    forceGet demoName model
+
+                ( x, z ) =
+                    prevDemo.activePoint
+
+                ( dx, dz ) =
+                    case key of
+                        "q" ->
+                            ( -1, 0 )
+
+                        "w" ->
+                            ( 0, -1 )
+
+                        "e" ->
+                            ( 1, -1 )
+
+                        "a" ->
+                            ( -1, 1 )
+
+                        "s" ->
+                            ( 0, 1 )
+
+                        "d" ->
+                            ( 1, 0 )
+
+                        _ ->
+                            ( 0, 0 )
+
+                newPoint =
+                    ( x + dx, z + dz )
+
+                nextDemo =
+                    if HexGrid.contains newPoint prevDemo.grid then
+                        { prevDemo | activePoint = newPoint }
+
+                    else
+                        prevDemo
+            in
+            Dict.insert nextDemo.name nextDemo model
+
 
 viewDistance : Demo -> Svg Msg
 viewDistance model =
@@ -148,7 +192,7 @@ viewDistance model =
 
         -- not flipped this time
         layout =
-            HexGrid.mkPointyTop 30 30 (600 / 2) (570 / 2)
+            HexGrid.mkFlatTop 30 30 (600 / 2) (570 / 2)
 
         pointsInLine =
             HexGrid.line model.activePoint model.hoverPoint
@@ -197,6 +241,7 @@ viewDistanceDemo demo =
     div
         [ class "d-flex justify-content-center align-items-center"
         , Hattr.attribute "tabindex" "0"
+        , Hevent.on "keydown" (JD.map (KeyPressDemo demo.name) (JD.field "key" JD.string))
         ]
         [ viewDistance demo
         ]
