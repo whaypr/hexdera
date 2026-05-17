@@ -1,7 +1,7 @@
-import { Elm } from './Main.elm';
+import { Elm } from './Playground.elm';
 
 const node = document.getElementById('main');
 
-Elm.Main.init({
+Elm.Playground.init({
   node,
 });
