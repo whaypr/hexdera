@@ -76,7 +76,7 @@ type alias Model =
 init : Model
 init =
     List.map (\demo -> ( demo.name, demo ))
-        [ initDemo "lineDemo"
+        [ initDemo "fogOfWarDemo"
         ]
         |> Dict.fromList
 
@@ -186,8 +186,8 @@ update msg model =
             Dict.insert nextDemo.name nextDemo model
 
 
-viewDistance : Demo -> Svg Msg
-viewDistance model =
+viewFogOfWar : Demo -> Svg Msg
+viewFogOfWar model =
     let
         (HexGrid.HexGrid _ dict) =
             model.grid
@@ -200,8 +200,12 @@ viewDistance model =
         layout =
             HexGrid.mkFlatTop 30 30 (600 / 2) (570 / 2)
 
-        pointsInLine =
+        pointsInFog =
+            HexGrid.fogOfWar model.activePoint model.obstacles model.grid
+
+        pointsInPath =
             HexGrid.line model.activePoint model.hoverPoint
+                |> List.drop 1
                 |> Set.fromList
 
         renderPoint ( point, tile ) =
@@ -213,31 +217,64 @@ viewDistance model =
                     HexGrid.polygonCorners layout point
             in
             Svg.g
-                [ Sevent.onClick (ActivePoint model point)
-                , Sevent.onMouseOver (HoverPoint model point)
+                [ Sevent.onMouseOver (HoverPoint model point)
+                , Sevent.onClick <|
+                    if Set.member point model.obstacles then
+                        RemoveObstacle model point
+
+                    else
+                        InsertObstacle model point
                 ]
                 [ Svg.polygon
                     [ Sattr.points (cornersToStr <| corners)
-                    , Sattr.stroke "black"
                     , Sattr.fill <|
-                        if model.activePoint == point then
+                        if model.hoverPoint == point && Set.member point model.obstacles then
+                            "#c0392b"
+
+                        else if Set.member point model.obstacles then
+                            "#e74c3c"
+
+                        else if point == model.activePoint then
                             "green"
 
                         else if model.hoverPoint == point then
                             "#f1c40f"
-                            -- gold
 
-                        else if Set.member point model.obstacles then
-                            "#c0392b"
-
-                        else if Set.member point pointsInLine then
+                        else if Set.member point pointsInFog then
                             "#bdc3c7"
-                            -- light grey
 
                         else
                             "white"
                     ]
                     []
+                , Svg.text_
+                    [ Sattr.stroke "white"
+                    , Sattr.fill "white"
+                    , Sattr.x (toString <| centerX - 10)
+                    , Sattr.y (toString <| centerY + 5)
+                    , Sattr.style "font-family: monospace; font-size: 18px;"
+                    ]
+                    [ Svg.text <|
+                        if point == model.activePoint then
+                            "👁"
+
+                        else
+                            ""
+                    ]
+                , Svg.text_
+                    [ Sattr.stroke "black"
+                    , Sattr.fill "black"
+                    , Sattr.x (toString <| centerX - 8)
+                    , Sattr.y (toString <| centerY + 7)
+                    , Sattr.style "font-family: monospace; font-size: 24px;"
+                    ]
+                    [ Svg.text <|
+                        if Set.member point pointsInPath then
+                            "×"
+
+                        else
+                            ""
+                    ]
                 ]
     in
     Svg.svg
@@ -245,14 +282,14 @@ viewDistance model =
         (List.map renderPoint (Dict.toList dict))
 
 
-viewDistanceDemo : Demo -> Html Msg
-viewDistanceDemo demo =
+viewFogOfWarDemo : Demo -> Html Msg
+viewFogOfWarDemo demo =
     Html.div
         [ Hattr.class "d-flex justify-content-center align-items-center"
         , Hattr.attribute "tabindex" "0"
         , Hevent.on "keydown" (JD.map (KeyPressDemo demo.name) (JD.field "key" JD.string))
         ]
-        [ viewDistance demo
+        [ viewFogOfWar demo
         ]
 
 
@@ -260,7 +297,7 @@ view : Model -> Svg.Svg Msg
 view model =
     Html.div
         []
-        [ Hlazy.lazy viewDistanceDemo (forceGet "lineDemo" model)
+        [ Hlazy.lazy viewFogOfWarDemo (forceGet "fogOfWarDemo" model)
 
         -- , hr [] []
         ]
