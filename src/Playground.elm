@@ -2,17 +2,18 @@ module Playground exposing (..)
 
 import Browser
 import Dict
-import HexGrid exposing (Direction(..), HexGrid(..))
-import Html exposing (Html, div)
-import Html.Attributes as Hattr exposing (..)
+import Html exposing (Html)
+import Html.Attributes as Hattr
 import Html.Events as Hevent
-import Html.Lazy exposing (lazy)
+import Html.Lazy as Hlazy
 import Json.Decode as JD
 import Set exposing (Set)
 import String
-import Svg exposing (Svg, g, polygon)
-import Svg.Attributes as Sattr exposing (fill, points, stroke, x, y)
-import Svg.Events as Sevent exposing (onClick, onMouseOver)
+import Svg exposing (Svg)
+import Svg.Attributes as Sattr
+import Svg.Events as Sevent
+
+import HexGrid exposing (HexGrid)
 
 
 toString : a -> String
@@ -188,7 +189,7 @@ update msg model =
 viewDistance : Demo -> Svg Msg
 viewDistance model =
     let
-        (HexGrid _ dict) =
+        (HexGrid.HexGrid _ dict) =
             model.grid
 
         cornersToStr corners =
@@ -196,7 +197,6 @@ viewDistance model =
                 |> List.map (\( x, y ) -> toString x ++ "," ++ toString y)
                 |> String.join " "
 
-        -- not flipped this time
         layout =
             HexGrid.mkFlatTop 30 30 (600 / 2) (570 / 2)
 
@@ -212,14 +212,14 @@ viewDistance model =
                 corners =
                     HexGrid.polygonCorners layout point
             in
-            g
-                [ onClick (ActivePoint model point)
-                , onMouseOver (HoverPoint model point)
+            Svg.g
+                [ Sevent.onClick (ActivePoint model point)
+                , Sevent.onMouseOver (HoverPoint model point)
                 ]
-                [ polygon
-                    [ points (cornersToStr <| corners)
-                    , stroke "black"
-                    , fill <|
+                [ Svg.polygon
+                    [ Sattr.points (cornersToStr <| corners)
+                    , Sattr.stroke "black"
+                    , Sattr.fill <|
                         if model.activePoint == point then
                             "green"
 
@@ -247,8 +247,8 @@ viewDistance model =
 
 viewDistanceDemo : Demo -> Html Msg
 viewDistanceDemo demo =
-    div
-        [ class "d-flex justify-content-center align-items-center"
+    Html.div
+        [ Hattr.class "d-flex justify-content-center align-items-center"
         , Hattr.attribute "tabindex" "0"
         , Hevent.on "keydown" (JD.map (KeyPressDemo demo.name) (JD.field "key" JD.string))
         ]
@@ -256,11 +256,11 @@ viewDistanceDemo demo =
         ]
 
 
-view : Model -> Svg Msg
+view : Model -> Svg.Svg Msg
 view model =
     Html.div
         []
-        [ lazy viewDistanceDemo (forceGet "lineDemo" model)
+        [ Hlazy.lazy viewDistanceDemo (forceGet "lineDemo" model)
 
         -- , hr [] []
         ]
