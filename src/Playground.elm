@@ -57,6 +57,12 @@ initDemo name =
             , ( -1, -1 )
             , ( 0, -2 )
             , ( 1, -3 )
+            , ( 3, -4 )
+            , ( 4, -4 )
+            , ( 4, -3 )
+            , ( -4, 0 )
+            , ( -3, 0 )
+            , ( 0, 3 )
             ]
     , maxSteps = 4
     }
@@ -170,7 +176,7 @@ update msg model =
                     ( x + dx, z + dz )
 
                 nextDemo =
-                    if HexGrid.contains newPoint prevDemo.grid then
+                    if HexGrid.contains newPoint prevDemo.grid && not (Set.member newPoint prevDemo.obstacles) then
                         { prevDemo | activePoint = newPoint }
 
                     else
@@ -220,6 +226,9 @@ viewDistance model =
                         else if model.hoverPoint == point then
                             "#f1c40f"
                             -- gold
+
+                        else if Set.member point model.obstacles then
+                            "#c0392b"
 
                         else if Set.member point pointsInLine then
                             "#bdc3c7"
