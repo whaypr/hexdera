@@ -21,23 +21,17 @@ toString value =
     Debug.toString value
 
 
-type alias Demo =
-    { name : String
-    , grid : HexGrid ()
+type alias Model =
+    { grid : HexGrid ()
     , activePoint : HexGrid.Point
     , hoverPoint : HexGrid.Point
     , obstacles : Set HexGrid.Point
-    , maxSteps : Int
-
-    -- , tilePath : Set.Set HexCoord
-    -- , moveTiles : Set.Set HexCoord -- Tiles highlight user can move to
     }
 
 
-initDemo : String -> Demo
-initDemo name =
-    { name = name
-    , grid = HexGrid.empty 5 ()
+init : Model
+init =
+    { grid = HexGrid.empty 5 ()
     , activePoint = ( 0, 0 )
     , hoverPoint = ( -1, -4 )
     , obstacles =
@@ -65,32 +59,16 @@ initDemo name =
             , ( -3, 0 )
             , ( 0, 3 )
             ]
-    , maxSteps = 4
     }
-
-
-type alias Model =
-    Dict.Dict String Demo
-
-
-init : Model
-init =
-    List.map (\demo -> ( demo.name, demo ))
-        [ initDemo "fogOfWarDemo"
-        ]
-        |> Dict.fromList
 
 
 type Msg
     = NoOp
-    | ActivePoint Demo HexGrid.Point
-    | HoverPoint Demo HexGrid.Point
-    | SetMaxSteps Demo Int
-    | InsertObstacle Demo HexGrid.Point
-    | RemoveObstacle Demo HexGrid.Point
-    | KeyPressDemo String String
-
-
+    | ActivePoint Model HexGrid.Point
+    | HoverPoint Model HexGrid.Point
+    | InsertObstacle Model HexGrid.Point
+    | RemoveObstacle Model HexGrid.Point
+    | KeyPress String
 forceGet : comparable -> Dict.Dict comparable v -> v
 forceGet key dict =
     case Dict.get key dict of
@@ -107,48 +85,41 @@ update msg model =
         NoOp ->
             model
 
-        ActivePoint prevDemo point ->
+        ActivePoint prevModel point ->
             let
-                nextDemo =
-                    { prevDemo | activePoint = point }
+                nextModel =
+                    { prevModel | activePoint = point }
             in
-            Dict.insert nextDemo.name nextDemo model
+            nextModel
 
-        HoverPoint prevDemo point ->
+        HoverPoint prevModel point ->
             let
-                nextDemo =
-                    { prevDemo | hoverPoint = point }
+                nextModel =
+                    { prevModel | hoverPoint = point }
             in
-            Dict.insert nextDemo.name nextDemo model
+            nextModel
 
-        SetMaxSteps prevDemo steps ->
+        InsertObstacle prevModel point ->
             let
-                nextDemo =
-                    { prevDemo | maxSteps = steps }
+                nextModel =
+                    { prevModel | obstacles = Set.insert point prevModel.obstacles }
             in
-            Dict.insert nextDemo.name nextDemo model
+            nextModel
 
-        InsertObstacle prevDemo point ->
+        RemoveObstacle prevModel point ->
             let
-                nextDemo =
-                    { prevDemo | obstacles = Set.insert point prevDemo.obstacles }
+                nextModel =
+                    { prevModel | obstacles = Set.remove point prevModel.obstacles }
             in
-            Dict.insert nextDemo.name nextDemo model
+            nextModel
 
-        RemoveObstacle prevDemo point ->
+        KeyPress key ->
             let
-                nextDemo =
-                    { prevDemo | obstacles = Set.remove point prevDemo.obstacles }
-            in
-            Dict.insert nextDemo.name nextDemo model
-
-        KeyPressDemo demoName key ->
-            let
-                prevDemo =
-                    forceGet demoName model
+                prevModel =
+                    model
 
                 ( x, z ) =
-                    prevDemo.activePoint
+                    prevModel.activePoint
 
                 ( dx, dz ) =
                     case key of
@@ -176,17 +147,17 @@ update msg model =
                 newPoint =
                     ( x + dx, z + dz )
 
-                nextDemo =
-                    if HexGrid.contains newPoint prevDemo.grid && not (Set.member newPoint prevDemo.obstacles) then
-                        { prevDemo | activePoint = newPoint }
+                nextModel =
+                    if HexGrid.contains newPoint prevModel.grid && not (Set.member newPoint prevModel.obstacles) then
+                        { prevModel | activePoint = newPoint }
 
                     else
-                        prevDemo
+                        prevModel
             in
-            Dict.insert nextDemo.name nextDemo model
+            nextModel
 
 
-viewFogOfWar : Demo -> Svg Msg
+viewFogOfWar : Model -> Svg Msg
 viewFogOfWar model =
     let
         (HexGrid.HexGrid _ dict) =
@@ -282,14 +253,14 @@ viewFogOfWar model =
         (List.map renderPoint (Dict.toList dict))
 
 
-viewFogOfWarDemo : Demo -> Html Msg
-viewFogOfWarDemo demo =
+viewFogOfWarDemo : Model -> Html Msg
+viewFogOfWarDemo model =
     Html.div
         [ Hattr.class "d-flex justify-content-center align-items-center"
         , Hattr.attribute "tabindex" "0"
-        , Hevent.on "keydown" (JD.map (KeyPressDemo demo.name) (JD.field "key" JD.string))
+        , Hevent.on "keydown" (JD.map KeyPress (JD.field "key" JD.string))
         ]
-        [ viewFogOfWar demo
+        [ viewFogOfWar model
         ]
 
 
@@ -297,7 +268,7 @@ view : Model -> Svg.Svg Msg
 view model =
     Html.div
         []
-        [ Hlazy.lazy viewFogOfWarDemo (forceGet "fogOfWarDemo" model)
+        [ Hlazy.lazy viewFogOfWarDemo model
 
         -- , hr [] []
         ]
