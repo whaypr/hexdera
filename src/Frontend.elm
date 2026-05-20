@@ -1,19 +1,20 @@
-module Playground exposing (..)
+module Frontend exposing (Model, app)
 
-import Browser
 import Dict
 import Html exposing (Html)
 import Html.Attributes as Hattr
 import Html.Events as Hevent
 import Html.Lazy as Hlazy
 import Json.Decode as JD
-import Set exposing (Set)
+import Lamdera as L
+import Set
 import String
 import Svg exposing (Svg)
 import Svg.Attributes as Sattr
 import Svg.Events as Sevent
 
-import HexGrid exposing (HexGrid)
+import HexGrid
+import Types exposing (..)
 
 
 toString : a -> String
@@ -22,88 +23,62 @@ toString value =
 
 
 type alias Model =
-    { grid : HexGrid ()
-    , activePoint : HexGrid.Point
-    , hoverPoint : HexGrid.Point
-    , obstacles : Set HexGrid.Point
-    }
+    FrontendModel
 
 
-main =
-    Browser.sandbox
-        { init = init
+{-| Lamdera applications define 'app' instead of 'main'.
+
+Lamdera.frontend is the same as Browser.application with the
+additional update function; updateFromBackend.
+
+-}
+app =
+    L.frontend
+        { init = \_ _ -> init
         , update = update
-        , view = view
+        , updateFromBackend = updateFromBackend
+        , view =
+            \model ->
+                { title = "Lamdera hex grid multiplayer"
+                , body = [ view model ]
+                }
+        , subscriptions = \_ -> Sub.none
+        , onUrlChange = \_ -> NoOp
+        , onUrlRequest = \_ -> NoOp
         }
 
 
-init : Model
+init : ( Model, Cmd FrontendMsg )
 init =
-    { grid = HexGrid.empty 5 ()
-    , activePoint = ( 0, 0 )
-    , hoverPoint = ( -1, -4 )
-    , obstacles =
-        Set.fromList
-            [ ( -5, 4 )
-            , ( -4, 3 )
-            , ( -3, 2 )
-            , ( -2, 1 )
-            , ( -1, 1 )
-            , ( -1, 2 )
-            , ( 0, 2 )
-            , ( 1, 2 )
-            , ( 2, 1 )
-            , ( 2, 0 )
-            , ( 2, -1 )
-            , ( 1, -1 )
-            , ( 2, -2 )
-            , ( -1, -1 )
-            , ( 0, -2 )
-            , ( 1, -3 )
-            , ( 3, -4 )
-            , ( 4, -4 )
-            , ( 4, -3 )
-            , ( -4, 0 )
-            , ( -3, 0 )
-            , ( 0, 3 )
-            ]
-    }
+    ( initialFrontendModel, Cmd.none )
 
 
-type Msg
-    = NoOp
-    | ActivePoint HexGrid.Point
-    | HoverPoint HexGrid.Point
-    | InsertObstacle HexGrid.Point
-    | RemoveObstacle HexGrid.Point
-    | KeyPress String
-forceGet : comparable -> Dict.Dict comparable v -> v
-forceGet key dict =
-    case Dict.get key dict of
-        Just v ->
-            v
-
-        Nothing ->
-            Debug.todo "Impossible"
-
-
-update : Msg -> Model -> Model
+update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
         NoOp ->
-            model
+            ( model, Cmd.none )
 
         ActivePoint point ->
-            { model | activePoint = point }
+            ( { model | activePoint = point }
+            , L.sendToBackend (PlayerMoved point)
+            )
 
         HoverPoint point ->
-            { model | hoverPoint = point }
+            ( { model | hoverPoint = point }, Cmd.none )
 
-        InsertObstacle point ->
-            { model | obstacles = Set.insert point model.obstacles }
+        ToggleObstacle point ->
+            let
+                nextObstacles =
+                    if Set.member point model.obstacles then
+                        Set.remove point model.obstacles
 
-        RemoveObstacle point ->
-            { model | obstacles = Set.remove point model.obstacles }
+                    else
+                        Set.insert point model.obstacles
+            in
+            ( { model | obstacles = nextObstacles }
+            , L.sendToBackend (ObstacleToggled point)
+            )
 
         KeyPress key ->
             let
@@ -135,18 +110,29 @@ update msg model =
 
                 newPoint =
                     ( x + dx, z + dz )
-
-                nextModel =
-                    if HexGrid.contains newPoint model.grid && not (Set.member newPoint model.obstacles) then
-                        { model | activePoint = newPoint }
-
-                    else
-                        model
             in
-            nextModel
+            if HexGrid.contains newPoint model.grid && not (Set.member newPoint model.obstacles) then
+                ( { model | activePoint = newPoint }
+                , L.sendToBackend (PlayerMoved newPoint)
+                )
+
+            else
+                ( model, Cmd.none )
 
 
-viewFogOfWar : Model -> Svg Msg
+updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
+updateFromBackend msg model =
+    case msg of
+        WorldUpdated world ->
+            ( { model
+                | activePoint = world.activePoint
+                , obstacles = world.obstacles
+              }
+            , Cmd.none
+            )
+
+
+viewFogOfWar : Model -> Svg FrontendMsg
 viewFogOfWar model =
     let
         (HexGrid.HexGrid _ dict) =
@@ -178,12 +164,7 @@ viewFogOfWar model =
             in
             Svg.g
                 [ Sevent.onMouseOver (HoverPoint point)
-                , Sevent.onClick <|
-                    if Set.member point model.obstacles then
-                        RemoveObstacle point
-
-                    else
-                        InsertObstacle point
+                , Sevent.onClick (ToggleObstacle point)
                 ]
                 [ Svg.polygon
                     [ Sattr.points (cornersToStr <| corners)
@@ -238,11 +219,14 @@ viewFogOfWar model =
                 ]
     in
     Svg.svg
-        []
+        [ Sattr.width "800"
+        , Sattr.height "800"
+        , Sattr.viewBox "0 0 1200 1200"
+        ]
         (List.map renderPoint (Dict.toList dict))
 
 
-viewFogOfWarDemo : Model -> Html Msg
+viewFogOfWarDemo : Model -> Html FrontendMsg
 viewFogOfWarDemo model =
     Html.div
         [ Hattr.class "d-flex justify-content-center align-items-center"
@@ -253,7 +237,7 @@ viewFogOfWarDemo model =
         ]
 
 
-view : Model -> Svg.Svg Msg
+view : Model -> Html FrontendMsg
 view model =
     Html.div
         []
