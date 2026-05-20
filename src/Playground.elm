@@ -29,6 +29,14 @@ type alias Model =
     }
 
 
+main =
+    Browser.sandbox
+        { init = init
+        , update = update
+        , view = view
+        }
+
+
 init : Model
 init =
     { grid = HexGrid.empty 5 ()
@@ -64,10 +72,10 @@ init =
 
 type Msg
     = NoOp
-    | ActivePoint Model HexGrid.Point
-    | HoverPoint Model HexGrid.Point
-    | InsertObstacle Model HexGrid.Point
-    | RemoveObstacle Model HexGrid.Point
+    | ActivePoint HexGrid.Point
+    | HoverPoint HexGrid.Point
+    | InsertObstacle HexGrid.Point
+    | RemoveObstacle HexGrid.Point
     | KeyPress String
 forceGet : comparable -> Dict.Dict comparable v -> v
 forceGet key dict =
@@ -85,41 +93,22 @@ update msg model =
         NoOp ->
             model
 
-        ActivePoint prevModel point ->
-            let
-                nextModel =
-                    { prevModel | activePoint = point }
-            in
-            nextModel
+        ActivePoint point ->
+            { model | activePoint = point }
 
-        HoverPoint prevModel point ->
-            let
-                nextModel =
-                    { prevModel | hoverPoint = point }
-            in
-            nextModel
+        HoverPoint point ->
+            { model | hoverPoint = point }
 
-        InsertObstacle prevModel point ->
-            let
-                nextModel =
-                    { prevModel | obstacles = Set.insert point prevModel.obstacles }
-            in
-            nextModel
+        InsertObstacle point ->
+            { model | obstacles = Set.insert point model.obstacles }
 
-        RemoveObstacle prevModel point ->
-            let
-                nextModel =
-                    { prevModel | obstacles = Set.remove point prevModel.obstacles }
-            in
-            nextModel
+        RemoveObstacle point ->
+            { model | obstacles = Set.remove point model.obstacles }
 
         KeyPress key ->
             let
-                prevModel =
-                    model
-
                 ( x, z ) =
-                    prevModel.activePoint
+                    model.activePoint
 
                 ( dx, dz ) =
                     case key of
@@ -148,11 +137,11 @@ update msg model =
                     ( x + dx, z + dz )
 
                 nextModel =
-                    if HexGrid.contains newPoint prevModel.grid && not (Set.member newPoint prevModel.obstacles) then
-                        { prevModel | activePoint = newPoint }
+                    if HexGrid.contains newPoint model.grid && not (Set.member newPoint model.obstacles) then
+                        { model | activePoint = newPoint }
 
                     else
-                        prevModel
+                        model
             in
             nextModel
 
@@ -188,13 +177,13 @@ viewFogOfWar model =
                     HexGrid.polygonCorners layout point
             in
             Svg.g
-                [ Sevent.onMouseOver (HoverPoint model point)
+                [ Sevent.onMouseOver (HoverPoint point)
                 , Sevent.onClick <|
                     if Set.member point model.obstacles then
-                        RemoveObstacle model point
+                        RemoveObstacle point
 
                     else
-                        InsertObstacle model point
+                        InsertObstacle point
                 ]
                 [ Svg.polygon
                     [ Sattr.points (cornersToStr <| corners)
@@ -272,11 +261,3 @@ view model =
 
         -- , hr [] []
         ]
-
-
-main =
-    Browser.sandbox
-        { init = init
-        , update = update
-        , view = view
-        }
