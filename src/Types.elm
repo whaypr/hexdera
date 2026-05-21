@@ -1,10 +1,9 @@
 module Types exposing (..)
 
 import Dict exposing (Dict)
+import HexGrid
 import Lamdera as L
 import Set
-
-import HexGrid
 
 
 type alias FrontendModel =

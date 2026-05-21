@@ -1,6 +1,7 @@
 module Frontend exposing (Model, app)
 
 import Dict
+import HexGrid
 import Html exposing (Html)
 import Html.Attributes as Hattr
 import Html.Events as Hevent
@@ -12,8 +13,6 @@ import String
 import Svg exposing (Svg)
 import Svg.Attributes as Sattr
 import Svg.Events as Sevent
-
-import HexGrid
 import Types exposing (..)
 
 

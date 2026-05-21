@@ -5,7 +5,7 @@
     "dev": "lamdera live",
     "build": "lamdera make src/Types.elm src/Backend.elm src/Frontend.elm",
     "format": "run-s format:elm format:prettier",
-    "format:elm": "elm-format --yes ./src/",
+    "format:elm": "elm-format --yes ./src/ ./external/hex-grid/",
     "format:prettier": "prettier --write README.md"
   },
   "license": "MIT",

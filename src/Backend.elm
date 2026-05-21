@@ -1,10 +1,9 @@
 module Backend exposing (Model, app)
 
 import Dict
+import HexGrid
 import Lamdera as L
 import Set
-
-import HexGrid
 import Types exposing (..)
 
 
