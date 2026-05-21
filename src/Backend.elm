@@ -60,34 +60,15 @@ updateFromFrontend _ clientId msg model =
     case msg of
         PlayerMoved point ->
             let
-                otherOccupiedPositions =
-                    Dict.remove clientId model.players
-                        |> Dict.values
-                        |> Set.fromList
-
-                currentPoint =
-                    Dict.get clientId model.players
-                        |> Maybe.withDefault point
-
-                canMove =
-                    HexGrid.contains point model.grid
-                        && not (Set.member point model.obstacles)
-                        && not (Set.member point otherOccupiedPositions)
+                updatedModel =
+                    { model | players = Dict.insert clientId point model.players }
             in
-            if canMove then
-                let
-                    updatedModel =
-                        { model | players = Dict.insert clientId point model.players }
-                in
-                ( updatedModel
-                , Cmd.batch
-                    [ L.sendToFrontend clientId (YourPosition point)
-                    , L.broadcast (worldUpdate updatedModel)
-                    ]
-                )
-
-            else
-                ( model, L.sendToFrontend clientId (YourPosition currentPoint) )
+            ( updatedModel
+            , Cmd.batch
+                [ L.sendToFrontend clientId (YourPosition point)
+                , L.broadcast (worldUpdate updatedModel)
+                ]
+            )
 
         ObstacleToggled point ->
             let

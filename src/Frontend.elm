@@ -106,7 +106,11 @@ update msg model =
                 newPoint =
                     ( x + dx, z + dz )
             in
-            if HexGrid.contains newPoint model.grid && not (Set.member newPoint model.obstacles) then
+            if
+                HexGrid.contains newPoint model.grid
+                    && not (Set.member newPoint model.obstacles)
+                    && not (Set.member newPoint (Set.fromList model.otherPlayers))
+            then
                 ( { model | thisPlayer = newPoint }
                 , L.sendToBackend (PlayerMoved newPoint)
                 )
