@@ -144,7 +144,7 @@ viewFogOfWar model =
 
         cornersToStr corners =
             corners
-                |> List.map (\( x, y ) -> toString x ++ "," ++ toString y)
+                |> List.map (\( x, y ) -> String.fromFloat x ++ "," ++ String.fromFloat y)
                 |> String.join " "
 
         layout =
@@ -198,8 +198,8 @@ viewFogOfWar model =
                 , Svg.text_
                     [ Sattr.stroke "white"
                     , Sattr.fill "white"
-                    , Sattr.x (toString <| centerX - 10)
-                    , Sattr.y (toString <| centerY + 5)
+                    , Sattr.x (String.fromFloat <| centerX - 10)
+                    , Sattr.y (String.fromFloat <| centerY + 5)
                     , Sattr.style "font-family: monospace; font-size: 18px;"
                     ]
                     [ Svg.text <|
@@ -212,8 +212,8 @@ viewFogOfWar model =
                 , Svg.text_
                     [ Sattr.stroke "black"
                     , Sattr.fill "black"
-                    , Sattr.x (toString <| centerX - 8)
-                    , Sattr.y (toString <| centerY + 7)
+                    , Sattr.x (String.fromFloat <| centerX - 8)
+                    , Sattr.y (String.fromFloat <| centerY + 7)
                     , Sattr.style "font-family: monospace; font-size: 24px;"
                     ]
                     [ Svg.text <|
@@ -252,8 +252,3 @@ view model =
 
         -- , hr [] []
         ]
-
-
-toString : a -> String
-toString value =
-    Debug.toString value

@@ -236,7 +236,8 @@ fringes start maxSteps obstacles =
                                 Set.toList points
 
                             Nothing ->
-                                Debug.todo "Impossible"
+                                -- Should never happen
+                                []
 
                     ( visited_, fringeLevel ) =
                         List.foldl
@@ -897,7 +898,8 @@ pathGraphHelp2 calcCost grid curr next (( frontier, costSoFar, cameFrom ) as mem
                         cost
 
                     Nothing ->
-                        Debug.todo "Impossible"
+                        -- Should never happen
+                        0
 
             newCost =
                 currCost + calcCost curr next
