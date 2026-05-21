@@ -136,6 +136,27 @@ updateFromBackend msg model =
 viewFogOfWar : Model -> Svg FrontendMsg
 viewFogOfWar model =
     let
+        viewportWidth =
+            600
+
+        viewportHeight =
+            570
+
+        viewportCenterX =
+            toFloat viewportWidth / 2
+
+        viewportCenterY =
+            toFloat viewportHeight / 2
+
+        hexSize =
+            60
+
+        baseLayout =
+            HexGrid.mkFlatTop hexSize hexSize 0 0
+
+        ( playerX, playerY ) =
+            HexGrid.hexToPixel baseLayout model.thisPlayer
+
         (HexGrid.HexGrid _ dict) =
             model.grid
 
@@ -148,7 +169,7 @@ viewFogOfWar model =
                 |> String.join " "
 
         layout =
-            HexGrid.mkFlatTop 30 30 (600 / 2) (570 / 2)
+            HexGrid.mkFlatTop hexSize hexSize (viewportCenterX - playerX) (viewportCenterY - playerY)
 
         pointsInFog =
             HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
@@ -226,9 +247,9 @@ viewFogOfWar model =
                 ]
     in
     Svg.svg
-        [ Sattr.width "800"
-        , Sattr.height "800"
-        , Sattr.viewBox "0 0 1200 1200"
+        [ Sattr.width (String.fromInt viewportWidth)
+        , Sattr.height (String.fromInt viewportHeight)
+        , Sattr.viewBox (String.join " " [ "0", "0", String.fromInt viewportWidth, String.fromInt viewportHeight ])
         ]
         (List.map renderPoint (Dict.toList dict))
 

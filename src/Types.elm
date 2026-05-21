@@ -51,7 +51,7 @@ type ToFrontend
 
 initialGrid : HexGrid.HexGrid ()
 initialGrid =
-    HexGrid.empty 5 ()
+    HexGrid.empty 7 ()
 
 
 initialObstacles : Set.Set HexGrid.Point
