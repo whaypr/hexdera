@@ -1,5 +1,6 @@
 module Backend exposing (Model, app)
 
+import Dict
 import Lamdera as L
 import Set
 
@@ -29,28 +30,64 @@ update : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
 update msg model =
     case msg of
         ClientConnected _ clientId ->
-            ( model, L.sendToFrontend clientId (WorldUpdated { activePoint = model.activePoint, obstacles = model.obstacles }) )
+            let
+                spawn =
+                    spawnPoint model
 
-        ClientDisconnected _ _ ->
-            ( model, Cmd.none )
+                nextModel =
+                    { model | players = Dict.insert clientId spawn model.players }
+            in
+            ( nextModel
+            , Cmd.batch
+                [ L.sendToFrontend clientId (YourPosition spawn)
+                , L.broadcast (worldUpdate nextModel)
+                ]
+            )
+
+        ClientDisconnected _ clientId ->
+            let
+                nextModel =
+                    { model | players = Dict.remove clientId model.players }
+            in
+            ( nextModel, L.broadcast (worldUpdate nextModel) )
 
         BNoOp ->
             ( model, Cmd.none )
 
 
 updateFromFrontend : L.SessionId -> L.ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
-updateFromFrontend _ _ msg model =
+updateFromFrontend _ clientId msg model =
     case msg of
         PlayerMoved point ->
-            if HexGrid.contains point model.grid && not (Set.member point model.obstacles) then
+            let
+                otherOccupiedPositions =
+                    Dict.remove clientId model.players
+                        |> Dict.values
+                        |> Set.fromList
+
+                currentPoint =
+                    Dict.get clientId model.players
+                        |> Maybe.withDefault point
+
+                canMove =
+                    HexGrid.contains point model.grid
+                        && not (Set.member point model.obstacles)
+                        && not (Set.member point otherOccupiedPositions)
+            in
+            if canMove then
                 let
-                    nextModel =
-                        { model | activePoint = point }
+                    updatedModel =
+                        { model | players = Dict.insert clientId point model.players }
                 in
-                ( nextModel, L.broadcast (WorldUpdated { activePoint = nextModel.activePoint, obstacles = nextModel.obstacles }) )
+                ( updatedModel
+                , Cmd.batch
+                    [ L.sendToFrontend clientId (YourPosition point)
+                    , L.broadcast (worldUpdate updatedModel)
+                    ]
+                )
 
             else
-                ( model, Cmd.none )
+                ( model, L.sendToFrontend clientId (YourPosition currentPoint) )
 
         ObstacleToggled point ->
             let
@@ -64,7 +101,7 @@ updateFromFrontend _ _ msg model =
                 nextModel =
                     { model | obstacles = nextObstacles }
             in
-            ( nextModel, L.broadcast (WorldUpdated { activePoint = nextModel.activePoint, obstacles = nextModel.obstacles }) )
+            ( nextModel, L.broadcast (worldUpdate nextModel) )
 
 
 subscriptions : Model -> Sub BackendMsg
@@ -73,3 +110,42 @@ subscriptions _ =
         [ L.onConnect ClientConnected
         , L.onDisconnect ClientDisconnected
         ]
+
+
+playerPositions : Model -> List HexGrid.Point
+playerPositions model =
+    Dict.values model.players
+
+
+worldUpdate : Model -> ToFrontend
+worldUpdate model =
+    WorldUpdated
+        { players = playerPositions model
+        , obstacles = model.obstacles
+        }
+
+
+occupiedPositions : Model -> Set.Set HexGrid.Point
+occupiedPositions model =
+    Dict.values model.players
+        |> Set.fromList
+
+
+spawnPoint : Model -> HexGrid.Point
+spawnPoint model =
+    let
+        candidates =
+            HexGrid.foldl (\point _ acc -> point :: acc) [] model.grid
+                |> List.sortBy (HexGrid.distance ( 0, 0 ))
+
+        blockedPositions =
+            occupiedPositions model
+
+        isFree point =
+            not (Set.member point model.obstacles)
+                && not (Set.member point blockedPositions)
+    in
+    candidates
+        |> List.filter isFree
+        |> List.head
+        |> Maybe.withDefault ( 0, 0 )

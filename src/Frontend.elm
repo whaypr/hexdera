@@ -17,11 +17,6 @@ import HexGrid
 import Types exposing (..)
 
 
-toString : a -> String
-toString value =
-    Debug.toString value
-
-
 type alias Model =
     FrontendModel
 
@@ -59,8 +54,8 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        ActivePoint point ->
-            ( { model | activePoint = point }
+        ThisPlayerPosition point ->
+            ( { model | thisPlayer = point }
             , L.sendToBackend (PlayerMoved point)
             )
 
@@ -83,7 +78,7 @@ update msg model =
         KeyPress key ->
             let
                 ( x, z ) =
-                    model.activePoint
+                    model.thisPlayer
 
                 ( dx, dz ) =
                     case key of
@@ -112,7 +107,7 @@ update msg model =
                     ( x + dx, z + dz )
             in
             if HexGrid.contains newPoint model.grid && not (Set.member newPoint model.obstacles) then
-                ( { model | activePoint = newPoint }
+                ( { model | thisPlayer = newPoint }
                 , L.sendToBackend (PlayerMoved newPoint)
                 )
 
@@ -125,11 +120,14 @@ updateFromBackend msg model =
     case msg of
         WorldUpdated world ->
             ( { model
-                | activePoint = world.activePoint
+                | otherPlayers = world.players
                 , obstacles = world.obstacles
               }
             , Cmd.none
             )
+
+        YourPosition point ->
+            ( { model | thisPlayer = point }, Cmd.none )
 
 
 viewFogOfWar : Model -> Svg FrontendMsg
@@ -137,6 +135,9 @@ viewFogOfWar model =
     let
         (HexGrid.HexGrid _ dict) =
             model.grid
+
+        playerPositions =
+            Set.fromList model.otherPlayers
 
         cornersToStr corners =
             corners
@@ -147,10 +148,10 @@ viewFogOfWar model =
             HexGrid.mkFlatTop 30 30 (600 / 2) (570 / 2)
 
         pointsInFog =
-            HexGrid.fogOfWar model.activePoint model.obstacles model.grid
+            HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
 
         pointsInPath =
-            HexGrid.line model.activePoint model.hoverPoint
+            HexGrid.line model.thisPlayer model.hoverPoint
                 |> List.drop 1
                 |> Set.fromList
 
@@ -169,14 +170,17 @@ viewFogOfWar model =
                 [ Svg.polygon
                     [ Sattr.points (cornersToStr <| corners)
                     , Sattr.fill <|
-                        if model.hoverPoint == point && Set.member point model.obstacles then
+                        if point == model.thisPlayer then
+                            "green"
+
+                        else if Set.member point playerPositions then
+                            "#8e44ad"
+
+                        else if model.hoverPoint == point && Set.member point model.obstacles then
                             "#c0392b"
 
                         else if Set.member point model.obstacles then
                             "#e74c3c"
-
-                        else if point == model.activePoint then
-                            "green"
 
                         else if model.hoverPoint == point then
                             "#f1c40f"
@@ -196,7 +200,7 @@ viewFogOfWar model =
                     , Sattr.style "font-family: monospace; font-size: 18px;"
                     ]
                     [ Svg.text <|
-                        if point == model.activePoint then
+                        if point == model.thisPlayer then
                             "👁"
 
                         else
@@ -245,3 +249,8 @@ view model =
 
         -- , hr [] []
         ]
+
+
+toString : a -> String
+toString value =
+    Debug.toString value

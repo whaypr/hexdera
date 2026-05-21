@@ -1,5 +1,6 @@
 module Types exposing (..)
 
+import Dict exposing (Dict)
 import Lamdera as L
 import Set
 
@@ -8,21 +9,22 @@ import HexGrid
 
 type alias FrontendModel =
     { grid : HexGrid.HexGrid ()
-    , activePoint : HexGrid.Point
+    , thisPlayer : HexGrid.Point
     , hoverPoint : HexGrid.Point
+    , otherPlayers : List HexGrid.Point
     , obstacles : Set.Set HexGrid.Point
     }
 
 
 type alias BackendModel =
     { grid : HexGrid.HexGrid ()
-    , activePoint : HexGrid.Point
+    , players : Dict L.ClientId HexGrid.Point
     , obstacles : Set.Set HexGrid.Point
     }
 
 
 type FrontendMsg
-    = ActivePoint HexGrid.Point
+    = ThisPlayerPosition HexGrid.Point
     | HoverPoint HexGrid.Point
     | ToggleObstacle HexGrid.Point
     | KeyPress String
@@ -42,9 +44,10 @@ type BackendMsg
 
 type ToFrontend
     = WorldUpdated
-        { activePoint : HexGrid.Point
+        { players : List HexGrid.Point
         , obstacles : Set.Set HexGrid.Point
         }
+    | YourPosition HexGrid.Point
 
 
 initialGrid : HexGrid.HexGrid ()
@@ -83,8 +86,9 @@ initialObstacles =
 initialFrontendModel : FrontendModel
 initialFrontendModel =
     { grid = initialGrid
-    , activePoint = ( 0, 0 )
+    , thisPlayer = ( 0, 0 )
     , hoverPoint = ( -1, -4 )
+    , otherPlayers = []
     , obstacles = initialObstacles
     }
 
@@ -92,6 +96,6 @@ initialFrontendModel =
 initialBackendModel : BackendModel
 initialBackendModel =
     { grid = initialGrid
-    , activePoint = ( 0, 0 )
+    , players = Dict.empty
     , obstacles = initialObstacles
     }
