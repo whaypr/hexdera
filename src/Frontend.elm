@@ -10,6 +10,7 @@ import Json.Decode as JD
 import Lamdera as L
 import Set
 import String
+import Styles
 import Svg exposing (Svg)
 import Svg.Attributes as Sattr
 import Svg.Events as Sevent
@@ -210,19 +211,18 @@ viewFogOfWar model =
                             "#f1c40f"
 
                         else if Set.member point pointsInFog then
-                            "#bdc3c7"
+                            "#bdbdbd"
 
                         else
                             "white"
                     ]
                     []
                 , Svg.text_
-                    [ Sattr.stroke "white"
-                    , Sattr.fill "white"
-                    , Sattr.x (String.fromFloat <| centerX - 10)
-                    , Sattr.y (String.fromFloat <| centerY + 5)
-                    , Sattr.style "font-family: monospace; font-size: 18px;"
-                    ]
+                    (Styles.eyeText
+                        ++ [ Sattr.x (String.fromFloat <| centerX - 10)
+                           , Sattr.y (String.fromFloat <| centerY + 5)
+                           ]
+                    )
                     [ Svg.text <|
                         if point == model.thisPlayer then
                             "👁"
@@ -231,12 +231,11 @@ viewFogOfWar model =
                             ""
                     ]
                 , Svg.text_
-                    [ Sattr.stroke "black"
-                    , Sattr.fill "black"
-                    , Sattr.x (String.fromFloat <| centerX - 8)
-                    , Sattr.y (String.fromFloat <| centerY + 7)
-                    , Sattr.style "font-family: monospace; font-size: 24px;"
-                    ]
+                    (Styles.pathText
+                        ++ [ Sattr.x (String.fromFloat <| centerX - 8)
+                           , Sattr.y (String.fromFloat <| centerY + 7)
+                           ]
+                    )
                     [ Svg.text <|
                         if Set.member point pointsInPath then
                             "×"
@@ -247,20 +246,23 @@ viewFogOfWar model =
                 ]
     in
     Svg.svg
-        [ Sattr.width (String.fromInt viewportWidth)
-        , Sattr.height (String.fromInt viewportHeight)
-        , Sattr.viewBox (String.join " " [ "0", "0", String.fromInt viewportWidth, String.fromInt viewportHeight ])
-        ]
+        ([ Sattr.width (String.fromInt viewportWidth)
+         , Sattr.height (String.fromInt viewportHeight)
+         , Sattr.viewBox (String.join " " [ "0", "0", String.fromInt viewportWidth, String.fromInt viewportHeight ])
+         ]
+            ++ Styles.boardSvg
+        )
         (List.map renderPoint (Dict.toList dict))
 
 
 viewFogOfWarDemo : Model -> Html FrontendMsg
 viewFogOfWarDemo model =
     Html.div
-        [ Hattr.class "d-flex justify-content-center align-items-center"
-        , Hattr.attribute "tabindex" "0"
-        , Hevent.on "keydown" (JD.map KeyPress (JD.field "key" JD.string))
-        ]
+        (Styles.gameShell
+            ++ [ Hattr.attribute "tabindex" "0"
+               , Hevent.on "keydown" (JD.map KeyPress (JD.field "key" JD.string))
+               ]
+        )
         [ viewFogOfWar model
         ]
 
@@ -268,7 +270,7 @@ viewFogOfWarDemo model =
 view : Model -> Html FrontendMsg
 view model =
     Html.div
-        []
+        Styles.pageRoot
         [ Hlazy.lazy viewFogOfWarDemo model
 
         -- , hr [] []
