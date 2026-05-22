@@ -185,15 +185,22 @@ viewFogOfWar model =
                 ( centerX, centerY ) =
                     HexGrid.hexToPixel layout point
 
+                gapScale =
+                    0.996
+
                 corners =
                     HexGrid.polygonCorners layout point
+
+                scaledCorners =
+                    corners
+                        |> List.map (\( x, y ) -> ( centerX + (x - centerX) * gapScale, centerY + (y - centerY) * gapScale ))
             in
             Svg.g
                 [ Sevent.onMouseOver (HoverPoint point)
                 , Sevent.onClick (ToggleObstacle point)
                 ]
                 [ Svg.polygon
-                    [ Sattr.points (cornersToStr <| corners)
+                    [ Sattr.points (cornersToStr <| scaledCorners)
                     , Sattr.fill <|
                         if point == model.thisPlayer then
                             "green"
