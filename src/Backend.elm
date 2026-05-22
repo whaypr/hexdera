@@ -39,7 +39,7 @@ update msg model =
             ( nextModel
             , Cmd.batch
                 [ L.sendToFrontend clientId (YourPosition spawn)
-                , L.broadcast (worldUpdate nextModel)
+                , broadcastWorldUpdate nextModel
                 ]
             )
 
@@ -48,7 +48,7 @@ update msg model =
                 nextModel =
                     { model | players = Dict.remove clientId model.players }
             in
-            ( nextModel, L.broadcast (worldUpdate nextModel) )
+            ( nextModel, broadcastWorldUpdate nextModel )
 
         BNoOp ->
             ( model, Cmd.none )
@@ -65,7 +65,7 @@ updateFromFrontend _ clientId msg model =
             ( updatedModel
             , Cmd.batch
                 [ L.sendToFrontend clientId (YourPosition point)
-                , L.broadcast (worldUpdate updatedModel)
+                , broadcastWorldUpdate updatedModel
                 ]
             )
 
@@ -81,7 +81,7 @@ updateFromFrontend _ clientId msg model =
                 nextModel =
                     { model | obstacles = nextObstacles }
             in
-            ( nextModel, L.broadcast (worldUpdate nextModel) )
+            ( nextModel, broadcastWorldUpdate nextModel )
 
 
 subscriptions : Model -> Sub BackendMsg
@@ -92,15 +92,26 @@ subscriptions _ =
         ]
 
 
-playerPositions : Model -> List HexGrid.Point
-playerPositions model =
-    Dict.values model.players
+broadcastWorldUpdate : Model -> Cmd BackendMsg
+broadcastWorldUpdate model =
+    Dict.foldl
+        (\clientId _ commands ->
+                Cmd.batch
+                    [ commands
+                    , L.sendToFrontend clientId (worldUpdateForClient clientId model)
+                    ]
+        )
+        Cmd.none
+        model.players
 
 
-worldUpdate : Model -> ToFrontend
-worldUpdate model =
+worldUpdateForClient : L.ClientId -> Model -> ToFrontend
+worldUpdateForClient clientId model =
     WorldUpdated
-        { players = playerPositions model
+        { players =
+            Dict.toList model.players
+                |> List.filter (\( otherClientId, _ ) -> otherClientId /= clientId)
+                |> List.map Tuple.second
         , obstacles = model.obstacles
         }
 
