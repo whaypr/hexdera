@@ -1,5 +1,6 @@
 module Frontend exposing (Model, app)
 
+import Browser.Dom
 import Dict
 import HexGrid
 import Html exposing (Html)
@@ -14,6 +15,7 @@ import Styles
 import Svg exposing (Svg)
 import Svg.Attributes as Sattr
 import Svg.Events as Sevent
+import Task
 import Types exposing (..)
 
 
@@ -45,7 +47,9 @@ app =
 
 init : ( Model, Cmd FrontendMsg )
 init =
-    ( initialFrontendModel, Cmd.none )
+    ( initialFrontendModel
+    , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
+    )
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
@@ -266,7 +270,8 @@ viewFogOfWarDemo : Model -> Html FrontendMsg
 viewFogOfWarDemo model =
     Html.div
         (Styles.gameShell
-            ++ [ Hattr.attribute "tabindex" "0"
+            ++ [ Hattr.id "game-shell"
+               , Hattr.attribute "tabindex" "0"
                , Hevent.on "keydown" (JD.map KeyPress (JD.field "key" JD.string))
                ]
         )
