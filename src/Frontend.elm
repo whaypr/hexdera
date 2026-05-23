@@ -68,10 +68,17 @@ update msg model =
 
         ToggleObstacle point ->
             let
-                occupiedPositions =
+                occupiedPlayers =
                     Set.insert model.thisPlayer (Set.fromList model.otherPlayers)
+
+                pointsInFog =
+                    if Set.member point model.obstacles then
+                        HexGrid.fogOfWar model.thisPlayer (Set.remove point model.obstacles) model.grid
+
+                    else
+                        HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
             in
-            if Set.member point occupiedPositions then
+            if Set.member point occupiedPlayers || Set.member point pointsInFog then
                 ( model, Cmd.none )
 
             else

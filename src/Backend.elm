@@ -70,22 +70,35 @@ updateFromFrontend _ clientId msg model =
             )
 
         ObstacleToggled point ->
-            if Set.member point (occupiedPositions model) then
-                ( model, Cmd.none )
+            case Dict.get clientId model.players of
+                Nothing ->
+                    ( model, Cmd.none )
 
-            else
-                let
-                    nextObstacles =
-                        if Set.member point model.obstacles then
-                            Set.remove point model.obstacles
+                Just eye ->
+                    let
+                        fogged =
+                            if Set.member point model.obstacles then
+                                HexGrid.fogOfWar eye (Set.remove point model.obstacles) model.grid
 
-                        else
-                            Set.insert point model.obstacles
+                            else
+                                HexGrid.fogOfWar eye model.obstacles model.grid
+                    in
+                    if Set.member point (occupiedPositions model) || Set.member point fogged then
+                        ( model, Cmd.none )
 
-                    nextModel =
-                        { model | obstacles = nextObstacles }
-                in
-                ( nextModel, broadcastWorldUpdate nextModel )
+                    else
+                        let
+                            nextObstacles =
+                                if Set.member point model.obstacles then
+                                    Set.remove point model.obstacles
+
+                                else
+                                    Set.insert point model.obstacles
+
+                            nextModel =
+                                { model | obstacles = nextObstacles }
+                        in
+                        ( nextModel, broadcastWorldUpdate nextModel )
 
 
 subscriptions : Model -> Sub BackendMsg
