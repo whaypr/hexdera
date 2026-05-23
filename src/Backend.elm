@@ -70,18 +70,22 @@ updateFromFrontend _ clientId msg model =
             )
 
         ObstacleToggled point ->
-            let
-                nextObstacles =
-                    if Set.member point model.obstacles then
-                        Set.remove point model.obstacles
+            if Set.member point (occupiedPositions model) then
+                ( model, Cmd.none )
 
-                    else
-                        Set.insert point model.obstacles
+            else
+                let
+                    nextObstacles =
+                        if Set.member point model.obstacles then
+                            Set.remove point model.obstacles
 
-                nextModel =
-                    { model | obstacles = nextObstacles }
-            in
-            ( nextModel, broadcastWorldUpdate nextModel )
+                        else
+                            Set.insert point model.obstacles
+
+                    nextModel =
+                        { model | obstacles = nextObstacles }
+                in
+                ( nextModel, broadcastWorldUpdate nextModel )
 
 
 subscriptions : Model -> Sub BackendMsg

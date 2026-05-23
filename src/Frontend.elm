@@ -68,16 +68,24 @@ update msg model =
 
         ToggleObstacle point ->
             let
-                nextObstacles =
-                    if Set.member point model.obstacles then
-                        Set.remove point model.obstacles
-
-                    else
-                        Set.insert point model.obstacles
+                occupiedPositions =
+                    Set.insert model.thisPlayer (Set.fromList model.otherPlayers)
             in
-            ( { model | obstacles = nextObstacles }
-            , L.sendToBackend (ObstacleToggled point)
-            )
+            if Set.member point occupiedPositions then
+                ( model, Cmd.none )
+
+            else
+                let
+                    nextObstacles =
+                        if Set.member point model.obstacles then
+                            Set.remove point model.obstacles
+
+                        else
+                            Set.insert point model.obstacles
+                in
+                ( { model | obstacles = nextObstacles }
+                , L.sendToBackend (ObstacleToggled point)
+                )
 
         KeyPress key ->
             let
@@ -165,7 +173,7 @@ viewFogOfWar model =
         (HexGrid.HexGrid _ dict) =
             model.grid
 
-        playerPositions =
+        otherPlayerPositions =
             Set.fromList model.otherPlayers
 
         cornersToStr corners =
@@ -215,14 +223,14 @@ viewFogOfWar model =
                         else if Set.member point model.obstacles then
                             "#e74c3c"
 
-                        else if model.hoverPoint == point then
-                            "#f1c40f"
-
                         else if Set.member point pointsInFog then
                             "#bdbdbd"
 
-                        else if Set.member point playerPositions then
+                        else if Set.member point otherPlayerPositions then
                             "#8e44ad"
+
+                        else if model.hoverPoint == point then
+                            "#f1c40f"
 
                         else
                             "white"
