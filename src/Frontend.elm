@@ -209,9 +209,6 @@ viewFogOfWar model =
                         if point == model.thisPlayer then
                             "green"
 
-                        else if Set.member point playerPositions then
-                            "#8e44ad"
-
                         else if model.hoverPoint == point && Set.member point model.obstacles then
                             "#c0392b"
 
@@ -223,6 +220,9 @@ viewFogOfWar model =
 
                         else if Set.member point pointsInFog then
                             "#bdbdbd"
+
+                        else if Set.member point playerPositions then
+                            "#8e44ad"
 
                         else
                             "white"
