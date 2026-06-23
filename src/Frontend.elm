@@ -36,7 +36,7 @@ app =
         , updateFromBackend = updateFromBackend
         , view =
             \model ->
-                { title = "Lamdera hex grid multiplayer"
+                { title = "Hexdera"
                 , body = [ view model ]
                 }
         , subscriptions = \_ -> Sub.none
@@ -48,6 +48,7 @@ app =
 init : ( Model, Cmd FrontendMsg )
 init =
     ( initialFrontendModel
+      -- automatically focus the game
     , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
     )
 
@@ -169,7 +170,7 @@ viewFogOfWar model =
             toFloat viewportHeight / 2
 
         hexSize =
-            60
+            35
 
         baseLayout =
             HexGrid.mkFlatTop hexSize hexSize 0 0

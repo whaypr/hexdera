@@ -113,10 +113,10 @@ broadcastWorldUpdate : Model -> Cmd BackendMsg
 broadcastWorldUpdate model =
     Dict.foldl
         (\clientId _ commands ->
-                Cmd.batch
-                    [ commands
-                    , L.sendToFrontend clientId (worldUpdateForClient clientId model)
-                    ]
+            Cmd.batch
+                [ commands
+                , L.sendToFrontend clientId (worldUpdateForClient clientId model)
+                ]
         )
         Cmd.none
         model.players
