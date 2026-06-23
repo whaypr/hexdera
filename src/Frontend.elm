@@ -17,6 +17,7 @@ import Svg exposing (Svg)
 import Svg.Attributes as Sattr
 import Svg.Events as Sevent
 import Task
+import Time exposing (Posix)
 import Types exposing (..)
 
 
@@ -26,6 +27,34 @@ type alias Model =
 
 type alias Msg =
     FrontendMsg
+
+
+cameraCenterForPoint : HexGrid.Point -> ( Float, Float )
+cameraCenterForPoint point =
+    let
+        baseLayout =
+            HexGrid.mkFlatTop Conf.hexSize Conf.hexSize 0 0
+    in
+    HexGrid.hexToPixel baseLayout point
+
+
+timeSinceLastTick : Posix -> Maybe Posix -> Float
+timeSinceLastTick now lastTick =
+    case lastTick of
+        Nothing ->
+            Conf.gameTickMillis
+
+        Just previous ->
+            toFloat (Time.posixToMillis now - Time.posixToMillis previous)
+
+
+approach : Float -> Float -> Float -> Float
+approach current target delta =
+    let
+        stepRatio =
+            min 1 (delta / Conf.cameraEaseMillis)
+    in
+    current + (target - current) * stepRatio
 
 
 {-| Lamdera applications define 'app' instead of 'main'.
@@ -44,7 +73,7 @@ app =
                 { title = "Hexdera"
                 , body = [ view model ]
                 }
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         , onUrlChange = \_ -> NoOp
         , onUrlRequest = \_ -> NoOp
         }
@@ -52,8 +81,11 @@ app =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Conf.initialFrontendModel
-      -- automatically focus the game
+    let
+        initialModel =
+            Conf.initialFrontendModel
+    in
+    ( { initialModel | cameraCenter = cameraCenterForPoint initialModel.thisPlayer }
     , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
     )
 
@@ -67,6 +99,30 @@ update msg model =
         ThisPlayerPosition point ->
             ( { model | thisPlayer = point }
             , L.sendToBackend (PlayerMoved point)
+            )
+
+        Tick now ->
+            let
+                delta =
+                    timeSinceLastTick now model.lastTick
+
+                ( currentX, currentY ) =
+                    model.cameraCenter
+
+                ( targetX, targetY ) =
+                    cameraCenterForPoint model.thisPlayer
+
+                nextCameraCenter =
+                    ( approach currentX targetX delta
+                    , approach currentY targetY delta
+                    )
+
+            in
+            ( { model
+                | cameraCenter = nextCameraCenter
+                , lastTick = Just now
+              }
+            , Cmd.none
             )
 
         HoverPoint point ->
@@ -155,20 +211,22 @@ updateFromBackend msg model =
             ( { model | thisPlayer = point }, Cmd.none )
 
 
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Time.every Conf.gameTickMillis Tick
+
+
 viewFogOfWar : Model -> Svg Msg
 viewFogOfWar model =
     let
-        baseLayout =
-            HexGrid.mkFlatTop Conf.hexSize Conf.hexSize 0 0
-
         viewportCenterX =
             toFloat Conf.viewportWidth / 2
 
         viewportCenterY =
             toFloat Conf.viewportHeight / 2
 
-        ( playerX, playerY ) =
-            HexGrid.hexToPixel baseLayout model.thisPlayer
+        ( cameraX, cameraY ) =
+            model.cameraCenter
 
         (HexGrid.HexGrid _ dict) =
             model.grid
@@ -182,7 +240,7 @@ viewFogOfWar model =
                 |> String.join " "
 
         layout =
-            HexGrid.mkFlatTop Conf.hexSize Conf.hexSize (viewportCenterX - playerX) (viewportCenterY - playerY)
+            HexGrid.mkFlatTop Conf.hexSize Conf.hexSize (viewportCenterX - cameraX) (viewportCenterY - cameraY)
 
         pointsInFog =
             HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid

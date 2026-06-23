@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import HexGrid
 import Lamdera as L
 import Set
+import Time exposing (Posix)
 
 
 type alias FrontendModel =
@@ -12,6 +13,8 @@ type alias FrontendModel =
     , hoverPoint : HexGrid.Point
     , otherPlayers : List HexGrid.Point
     , obstacles : Set.Set HexGrid.Point
+    , cameraCenter : ( Float, Float )
+    , lastTick : Maybe Posix
     }
 
 
@@ -27,6 +30,7 @@ type FrontendMsg
     | HoverPoint HexGrid.Point
     | ToggleObstacle HexGrid.Point
     | KeyPress String
+    | Tick Posix
     | NoOp
 
 

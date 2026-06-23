@@ -26,6 +26,14 @@ viewportHeight =
     570
 
 
+cameraEaseMillis : Float
+cameraEaseMillis =
+    300
+
+
+gameTickMillis : Float
+gameTickMillis =
+    16
 
 
 placementRange : Int
@@ -73,6 +81,8 @@ initialFrontendModel =
     , hoverPoint = ( -1, -4 )
     , otherPlayers = []
     , obstacles = initialObstacles
+    , cameraCenter = ( 0, 0 )
+    , lastTick = Nothing
     }
 
 
