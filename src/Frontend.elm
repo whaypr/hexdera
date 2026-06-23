@@ -23,6 +23,10 @@ type alias Model =
     FrontendModel
 
 
+type alias Msg =
+    FrontendMsg
+
+
 {-| Lamdera applications define 'app' instead of 'main'.
 
 Lamdera.frontend is the same as Browser.application with the
@@ -45,7 +49,7 @@ app =
         }
 
 
-init : ( Model, Cmd FrontendMsg )
+init : ( Model, Cmd Msg )
 init =
     ( initialFrontendModel
       -- automatically focus the game
@@ -53,7 +57,7 @@ init =
     )
 
 
-update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
@@ -139,7 +143,7 @@ update msg model =
                 ( model, Cmd.none )
 
 
-updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
+updateFromBackend : ToFrontend -> Model -> ( Model, Cmd Msg )
 updateFromBackend msg model =
     case msg of
         WorldUpdated world ->
@@ -154,7 +158,7 @@ updateFromBackend msg model =
             ( { model | thisPlayer = point }, Cmd.none )
 
 
-viewFogOfWar : Model -> Svg FrontendMsg
+viewFogOfWar : Model -> Svg Msg
 viewFogOfWar model =
     let
         viewportWidth =
@@ -282,7 +286,7 @@ viewFogOfWar model =
         (List.map renderPoint (Dict.toList dict))
 
 
-viewFogOfWarDemo : Model -> Html FrontendMsg
+viewFogOfWarDemo : Model -> Html Msg
 viewFogOfWarDemo model =
     Html.div
         (Styles.gameShell
@@ -295,7 +299,7 @@ viewFogOfWarDemo model =
         ]
 
 
-view : Model -> Html FrontendMsg
+view : Model -> Html Msg
 view model =
     Html.div
         Styles.pageRoot
