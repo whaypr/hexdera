@@ -117,9 +117,12 @@ update msg model =
                     , approach currentY targetY delta
                     )
 
+                nextMoveCooldownRemaining =
+                    max 0 (model.moveCooldownRemaining - delta)
             in
             ( { model
                 | cameraCenter = nextCameraCenter
+                , moveCooldownRemaining = nextMoveCooldownRemaining
                 , lastTick = Just now
               }
             , Cmd.none
@@ -153,47 +156,54 @@ update msg model =
                 )
 
         KeyPress key ->
-            let
-                ( x, z ) =
-                    model.thisPlayer
-
-                ( dx, dz ) =
-                    case key of
-                        "q" ->
-                            ( -1, 0 )
-
-                        "w" ->
-                            ( 0, -1 )
-
-                        "e" ->
-                            ( 1, -1 )
-
-                        "a" ->
-                            ( -1, 1 )
-
-                        "s" ->
-                            ( 0, 1 )
-
-                        "d" ->
-                            ( 1, 0 )
-
-                        _ ->
-                            ( 0, 0 )
-
-                newPoint =
-                    ( x + dx, z + dz )
-            in
-            if
-                HexGrid.contains newPoint model.grid
-                    && not (Set.member newPoint model.obstacles)
-                    && not (Set.member newPoint (Set.fromList model.otherPlayers))
-            then
-                ( { model | thisPlayer = newPoint }
-                , L.sendToBackend (PlayerMoved newPoint)
-                )
+            if model.moveCooldownRemaining > 0 then
+                ( model, Cmd.none )
 
             else
-                ( model, Cmd.none )
+                let
+                    ( x, z ) =
+                        model.thisPlayer
+
+                    ( dx, dz ) =
+                        case key of
+                            "q" ->
+                                ( -1, 0 )
+
+                            "w" ->
+                                ( 0, -1 )
+
+                            "e" ->
+                                ( 1, -1 )
+
+                            "a" ->
+                                ( -1, 1 )
+
+                            "s" ->
+                                ( 0, 1 )
+
+                            "d" ->
+                                ( 1, 0 )
+
+                            _ ->
+                                ( 0, 0 )
+
+                    newPoint =
+                        ( x + dx, z + dz )
+                in
+                if
+                    HexGrid.contains newPoint model.grid
+                        && not (Set.member newPoint model.obstacles)
+                        && not (Set.member newPoint (Set.fromList model.otherPlayers))
+                then
+                    ( { model
+                        | thisPlayer = newPoint
+                        , moveCooldownRemaining = Conf.movementCooldownMillis
+                      }
+                    , L.sendToBackend (PlayerMoved newPoint)
+                    )
+
+                else
+                    ( model, Cmd.none )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd Msg )

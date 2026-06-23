@@ -31,6 +31,11 @@ cameraEaseMillis =
     300
 
 
+movementCooldownMillis : Float
+movementCooldownMillis =
+    200
+
+
 gameTickMillis : Float
 gameTickMillis =
     16
@@ -82,6 +87,7 @@ initialFrontendModel =
     , otherPlayers = []
     , obstacles = initialObstacles
     , cameraCenter = ( 0, 0 )
+    , moveCooldownRemaining = 0
     , lastTick = Nothing
     }
 

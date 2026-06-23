@@ -14,6 +14,7 @@ type alias FrontendModel =
     , otherPlayers : List HexGrid.Point
     , obstacles : Set.Set HexGrid.Point
     , cameraCenter : ( Float, Float )
+    , moveCooldownRemaining : Float
     , lastTick : Maybe Posix
     }
 
