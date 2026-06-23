@@ -77,11 +77,7 @@ update msg model =
                     Set.insert model.thisPlayer (Set.fromList model.otherPlayers)
 
                 pointsInFog =
-                    if Set.member point model.obstacles then
-                        HexGrid.fogOfWar model.thisPlayer (Set.remove point model.obstacles) model.grid
-
-                    else
-                        HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
+                    HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
             in
             if Set.member point occupiedPlayers || Set.member point pointsInFog then
                 ( model, Cmd.none )
@@ -228,6 +224,8 @@ viewFogOfWar model =
                     , Sattr.fill <|
                         if point == model.thisPlayer then
                             "green"
+                        if Set.member point model.obstacles && Set.member point pointsInFog then
+                            "#c0392b"
 
                         else if model.hoverPoint == point && Set.member point model.obstacles then
                             "#c0392b"
@@ -240,7 +238,6 @@ viewFogOfWar model =
 
                         else if Set.member point otherPlayerPositions then
                             "#8e44ad"
-
                         else if model.hoverPoint == point then
                             "#f1c40f"
 

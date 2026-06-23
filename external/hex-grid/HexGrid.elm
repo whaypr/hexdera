@@ -336,7 +336,7 @@ fogOfWar eye obstacles grid =
                         ( True, Set.insert point accumulatedFog )
 
                     else if Set.member point obstacles then
-                        ( True, Set.insert point accumulatedFog )
+                        ( True, accumulatedFog )
 
                     else
                         ( False, accumulatedFog )
