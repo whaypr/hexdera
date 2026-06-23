@@ -1,6 +1,7 @@
 module Frontend exposing (Model, app)
 
 import Browser.Dom
+import Config as Conf
 import Dict
 import HexGrid
 import Html exposing (Html)
@@ -51,7 +52,7 @@ app =
 
 init : ( Model, Cmd Msg )
 init =
-    ( initialFrontendModel
+    ( Conf.initialFrontendModel
       -- automatically focus the game
     , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
     )
@@ -79,7 +80,7 @@ update msg model =
                 pointsInFog =
                     HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
             in
-            if Set.member point occupiedPlayers || Set.member point pointsInFog || HexGrid.distance model.thisPlayer point > placementRange then
+            if Set.member point occupiedPlayers || Set.member point pointsInFog || HexGrid.distance model.thisPlayer point > Conf.placementRange then
                 ( model, Cmd.none )
 
             else
@@ -157,23 +158,14 @@ updateFromBackend msg model =
 viewFogOfWar : Model -> Svg Msg
 viewFogOfWar model =
     let
-        viewportWidth =
-            600
-
-        viewportHeight =
-            570
+        baseLayout =
+            HexGrid.mkFlatTop Conf.hexSize Conf.hexSize 0 0
 
         viewportCenterX =
-            toFloat viewportWidth / 2
+            toFloat Conf.viewportWidth / 2
 
         viewportCenterY =
-            toFloat viewportHeight / 2
-
-        hexSize =
-            35
-
-        baseLayout =
-            HexGrid.mkFlatTop hexSize hexSize 0 0
+            toFloat Conf.viewportHeight / 2
 
         ( playerX, playerY ) =
             HexGrid.hexToPixel baseLayout model.thisPlayer
@@ -190,7 +182,7 @@ viewFogOfWar model =
                 |> String.join " "
 
         layout =
-            HexGrid.mkFlatTop hexSize hexSize (viewportCenterX - playerX) (viewportCenterY - playerY)
+            HexGrid.mkFlatTop Conf.hexSize Conf.hexSize (viewportCenterX - playerX) (viewportCenterY - playerY)
 
         pointsInFog =
             HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
@@ -226,7 +218,7 @@ viewFogOfWar model =
                         if Set.member point model.obstacles && Set.member point pointsInFog then
                             "#c0392b"
 
-                        else if Set.member point model.obstacles && model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= placementRange then
+                        else if Set.member point model.obstacles && model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= Conf.placementRange then
                             "#c0392b"
 
                         else if Set.member point model.obstacles then
@@ -235,7 +227,7 @@ viewFogOfWar model =
                         else if Set.member point pointsInFog then
                             "#bdbdbd"
 
-                        else if model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= placementRange then
+                        else if model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= Conf.placementRange then
                             "#f1c40f"
 
                         else
@@ -296,9 +288,9 @@ viewFogOfWar model =
                 ]
     in
     Svg.svg
-        ([ Sattr.width (String.fromInt viewportWidth)
-         , Sattr.height (String.fromInt viewportHeight)
-         , Sattr.viewBox (String.join " " [ "0", "0", String.fromInt viewportWidth, String.fromInt viewportHeight ])
+        ([ Sattr.width (String.fromInt Conf.viewportWidth)
+         , Sattr.height (String.fromInt Conf.viewportHeight)
+         , Sattr.viewBox (String.join " " [ "0", "0", String.fromInt Conf.viewportWidth, String.fromInt Conf.viewportHeight ])
          ]
             ++ Styles.boardSvg
         )

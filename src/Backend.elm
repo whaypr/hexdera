@@ -1,5 +1,6 @@
 module Backend exposing (Model, app)
 
+import Config as Conf
 import Dict
 import HexGrid
 import Lamdera as L
@@ -22,7 +23,7 @@ app =
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( initialBackendModel, Cmd.none )
+    ( Conf.initialBackendModel, Cmd.none )
 
 
 update : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
