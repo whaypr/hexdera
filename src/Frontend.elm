@@ -187,11 +187,6 @@ viewFogOfWar model =
         pointsInFog =
             HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
 
-        pointsInPath =
-            HexGrid.line model.thisPlayer model.hoverPoint
-                |> List.drop 1
-                |> Set.fromList
-
         renderPoint ( point, tile ) =
             let
                 ( centerX, centerY ) =
@@ -259,32 +254,6 @@ viewFogOfWar model =
 
                   else
                     Svg.text_ [] []
-                , Svg.text_
-                    (Styles.eyeText
-                        ++ [ Sattr.x (String.fromFloat <| centerX - 10)
-                           , Sattr.y (String.fromFloat <| centerY + 5)
-                           ]
-                    )
-                    [ Svg.text <|
-                        if point == model.thisPlayer then
-                            "👁"
-
-                        else
-                            ""
-                    ]
-                , Svg.text_
-                    (Styles.pathText
-                        ++ [ Sattr.x (String.fromFloat <| centerX - 8)
-                           , Sattr.y (String.fromFloat <| centerY + 7)
-                           ]
-                    )
-                    [ Svg.text <|
-                        if Set.member point pointsInPath then
-                            "×"
-
-                        else
-                            ""
-                    ]
                 ]
     in
     Svg.svg
