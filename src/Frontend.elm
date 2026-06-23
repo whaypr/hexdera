@@ -79,7 +79,7 @@ update msg model =
                 pointsInFog =
                     HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
             in
-            if Set.member point occupiedPlayers || Set.member point pointsInFog then
+            if Set.member point occupiedPlayers || Set.member point pointsInFog || HexGrid.distance model.thisPlayer point > placementRange then
                 ( model, Cmd.none )
 
             else
@@ -227,7 +227,7 @@ viewFogOfWar model =
                         if Set.member point model.obstacles && Set.member point pointsInFog then
                             "#c0392b"
 
-                        else if model.hoverPoint == point && Set.member point model.obstacles then
+                        else if Set.member point model.obstacles && model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= placementRange then
                             "#c0392b"
 
                         else if Set.member point model.obstacles then
@@ -238,7 +238,7 @@ viewFogOfWar model =
 
                         else if Set.member point otherPlayerPositions then
                             "#8e44ad"
-                        else if model.hoverPoint == point then
+                        else if model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= placementRange then
                             "#f1c40f"
 
                         else

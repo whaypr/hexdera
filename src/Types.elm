@@ -49,6 +49,11 @@ type ToFrontend
     | YourPosition HexGrid.Point
 
 
+placementRange : Int
+placementRange =
+    2
+
+
 initialGrid : HexGrid.HexGrid ()
 initialGrid =
     HexGrid.empty 10 ()
