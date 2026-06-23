@@ -219,11 +219,10 @@ viewFogOfWar model =
                 [ Sevent.onMouseOver (HoverPoint point)
                 , Sevent.onClick (ToggleObstacle point)
                 ]
+                -- ground and environment
                 [ Svg.polygon
                     [ Sattr.points (cornersToStr <| scaledCorners)
                     , Sattr.fill <|
-                        if point == model.thisPlayer then
-                            "green"
                         if Set.member point model.obstacles && Set.member point pointsInFog then
                             "#c0392b"
 
@@ -236,8 +235,6 @@ viewFogOfWar model =
                         else if Set.member point pointsInFog then
                             "#bdbdbd"
 
-                        else if Set.member point otherPlayerPositions then
-                            "#8e44ad"
                         else if model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= placementRange then
                             "#f1c40f"
 
@@ -245,6 +242,31 @@ viewFogOfWar model =
                             "white"
                     ]
                     []
+
+                -- players
+                , if point == model.thisPlayer then
+                    Svg.circle
+                        [ Sattr.cx (String.fromFloat centerX)
+                        , Sattr.cy (String.fromFloat centerY)
+                        , Sattr.r "18"
+                        , Sattr.fill "#16a34a"
+                        , Sattr.stroke "rgba(255, 255, 255, 0.55)"
+                        , Sattr.strokeWidth "4"
+                        ]
+                        []
+
+                  else if Set.member point otherPlayerPositions && not (Set.member point pointsInFog) then
+                    Svg.circle
+                        [ Sattr.cx (String.fromFloat centerX)
+                        , Sattr.cy (String.fromFloat centerY)
+                        , Sattr.r "15"
+                        , Sattr.fill "#8e44ad"
+                        , Sattr.strokeWidth "0"
+                        ]
+                        []
+
+                  else
+                    Svg.text_ [] []
                 , Svg.text_
                     (Styles.eyeText
                         ++ [ Sattr.x (String.fromFloat <| centerX - 10)
