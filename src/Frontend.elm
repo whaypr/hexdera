@@ -3,6 +3,7 @@ module Frontend exposing (Model, app)
 import Browser.Dom
 import Config as Conf
 import Dict
+import Helpers as Help
 import HexGrid
 import Html exposing (Html)
 import Html.Attributes as Hattr
@@ -17,7 +18,7 @@ import Svg exposing (Svg)
 import Svg.Attributes as Sattr
 import Svg.Events as Sevent
 import Task
-import Time exposing (Posix)
+import Time
 import Types exposing (..)
 
 
@@ -27,34 +28,6 @@ type alias Model =
 
 type alias Msg =
     FrontendMsg
-
-
-cameraCenterForPoint : HexGrid.Point -> ( Float, Float )
-cameraCenterForPoint point =
-    let
-        baseLayout =
-            HexGrid.mkFlatTop Conf.hexSize Conf.hexSize 0 0
-    in
-    HexGrid.hexToPixel baseLayout point
-
-
-timeSinceLastTick : Posix -> Maybe Posix -> Float
-timeSinceLastTick now lastTick =
-    case lastTick of
-        Nothing ->
-            Conf.gameTickMillis
-
-        Just previous ->
-            toFloat (Time.posixToMillis now - Time.posixToMillis previous)
-
-
-approach : Float -> Float -> Float -> Float
-approach current target delta =
-    let
-        stepRatio =
-            min 1 (delta / Conf.cameraEaseMillis)
-    in
-    current + (target - current) * stepRatio
 
 
 {-| Lamdera applications define 'app' instead of 'main'.
@@ -83,9 +56,9 @@ init : ( Model, Cmd Msg )
 init =
     let
         initialModel =
-            Conf.initialFrontendModel
+            Conf.initialFrontendModel Help.visibleTilesAround
     in
-    ( { initialModel | cameraCenter = cameraCenterForPoint initialModel.thisPlayer }
+    ( { initialModel | cameraCenter = Help.cameraCenterForPoint initialModel.thisPlayer }
     , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
     )
 
@@ -104,17 +77,17 @@ update msg model =
         Tick now ->
             let
                 delta =
-                    timeSinceLastTick now model.lastTick
+                    Help.timeSinceLastTick now model.lastTick
 
                 ( currentX, currentY ) =
                     model.cameraCenter
 
                 ( targetX, targetY ) =
-                    cameraCenterForPoint model.thisPlayer
+                    Help.cameraCenterForPoint model.thisPlayer
 
                 nextCameraCenter =
-                    ( approach currentX targetX delta
-                    , approach currentY targetY delta
+                    ( Help.approach currentX targetX delta
+                    , Help.approach currentY targetY delta
                     )
 
                 nextMoveCooldownRemaining =
