@@ -92,6 +92,7 @@ initialFrontendModel visibleTilesFunc =
     , otherPlayers = []
     , obstacles = initialObstacles
     , visibleTiles = visibleTilesFunc ( 0, 0 ) initialGrid
+    , pointsInFog = Set.empty
     , cameraCenter = ( 0, 0 )
     , moveCooldownRemaining = 0
     , lastTick = Nothing

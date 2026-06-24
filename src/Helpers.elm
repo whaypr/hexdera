@@ -55,6 +55,16 @@ shiftVisibleTiles grid delta visibleTiles =
         visibleTiles
 
 
+pointsInFogFor : FrontendModel -> Set.Set HexGrid.Point
+pointsInFogFor model =
+    HexGrid.fogOfWarWithin model.thisPlayer (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
+
+
+withPointsInFog : FrontendModel -> FrontendModel
+withPointsInFog model =
+    { model | pointsInFog = pointsInFogFor model }
+
+
 timeSinceLastTick : Posix -> Maybe Posix -> Float
 timeSinceLastTick now lastTick =
     case lastTick of

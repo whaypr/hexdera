@@ -56,6 +56,7 @@ init =
     let
         initialModel =
             Conf.initialFrontendModel Help.visibleTilesAround
+                |> Help.withPointsInFog
     in
     ( { initialModel | cameraCenter = Help.cameraCenterForPoint initialModel.thisPlayer }
     , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
@@ -73,6 +74,7 @@ update msg model =
                 | thisPlayer = point
                 , visibleTiles = Help.visibleTilesAround point model.grid
               }
+                |> Help.withPointsInFog
             , L.sendToBackend (PlayerMoved point)
             )
 
@@ -111,11 +113,8 @@ update msg model =
                 occupiedPlayers =
                     Set.insert model.thisPlayer (Set.fromList model.otherPlayers)
 
-                pointsInFog =
-                    HexGrid.fogOfWarWithin model.thisPlayer (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
-
                 isFogged =
-                    Set.member point pointsInFog
+                    Set.member point model.pointsInFog
             in
             if Set.member point occupiedPlayers || isFogged || HexGrid.distance model.thisPlayer point > Conf.placementRange then
                 ( model, Cmd.none )
@@ -128,8 +127,12 @@ update msg model =
 
                         else
                             Set.insert point model.obstacles
+
+                    nextModel =
+                        { model | obstacles = nextObstacles }
+                            |> Help.withPointsInFog
                 in
-                ( { model | obstacles = nextObstacles }
+                ( nextModel
                 , L.sendToBackend (ObstacleToggled point)
                 )
 
@@ -178,6 +181,7 @@ update msg model =
                         , visibleTiles = Help.shiftVisibleTiles model.grid ( dx, dz ) model.visibleTiles
                         , moveCooldownRemaining = Conf.movementCooldownMillis
                       }
+                        |> Help.withPointsInFog
                     , L.sendToBackend (PlayerMoved newPoint)
                     )
 
@@ -193,6 +197,7 @@ updateFromBackend msg model =
                 | otherPlayers = world.players
                 , obstacles = world.obstacles
               }
+                |> Help.withPointsInFog
             , Cmd.none
             )
 
@@ -201,6 +206,7 @@ updateFromBackend msg model =
                 | thisPlayer = point
                 , visibleTiles = Help.visibleTilesAround point model.grid
               }
+                |> Help.withPointsInFog
             , Cmd.none
             )
 
@@ -249,9 +255,6 @@ viewFogOfWar model =
         layout =
             HexGrid.mkFlatTop Conf.hexSize Conf.hexSize (viewportCenterX - cameraX) (viewportCenterY - cameraY)
 
-        pointsInFog =
-            HexGrid.fogOfWarWithin model.thisPlayer (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
-
         renderPoint point =
             let
                 ( centerX, centerY ) =
@@ -268,7 +271,7 @@ viewFogOfWar model =
                         |> List.map (\( x, y ) -> ( centerX + (x - centerX) * gapScale, centerY + (y - centerY) * gapScale ))
 
                 isFogged =
-                    Set.member point pointsInFog
+                    Set.member point model.pointsInFog
             in
             Svg.g
                 [ Sevent.onMouseOver (HoverPoint point)
