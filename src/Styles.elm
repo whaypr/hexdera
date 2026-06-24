@@ -1,4 +1,4 @@
-module Styles exposing (boardSvg, eyeText, gameShell, pageRoot, pathText)
+module Styles exposing (boardSvg, eyeText, gameShell, hudLabel, hudPanel, hudValue, pageRoot, pathText)
 
 import Html
 import Html.Attributes as Hattr
@@ -25,10 +25,11 @@ pageRoot =
 gameShell : List (Html.Attribute msg)
 gameShell =
     [ Hattr.style "width" "100%"
-    , Hattr.style "min-height" "100vh"
     , Hattr.style "display" "flex"
     , Hattr.style "justify-content" "center"
-    , Hattr.style "align-items" "center"
+    , Hattr.style "align-items" "stretch"
+    , Hattr.style "gap" "24px"
+    , Hattr.style "flex-wrap" "wrap"
     , Hattr.style "outline" "none"
     ]
 
@@ -43,6 +44,42 @@ boardSvg =
         background: #000000;
         box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35), 0 2px 8px rgba(15, 23, 42, 0.2);
         """
+    ]
+
+
+hudPanel : List (Html.Attribute msg)
+hudPanel =
+    [ Hattr.style "min-width" "220px"
+    , Hattr.style "padding" "18px 20px"
+    , Hattr.style "border-radius" "20px"
+    , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.12)"
+    , Hattr.style "background" "rgba(2, 6, 23, 0.48)"
+    , Hattr.style "backdrop-filter" "blur(12px)"
+    , Hattr.style "box-shadow" "0 24px 60px rgba(2, 6, 23, 0.25)"
+    , Hattr.style "display" "flex"
+    , Hattr.style "flex-direction" "column"
+    , Hattr.style "justify-content" "flex-start"
+    , Hattr.style "gap" "12px"
+    ]
+
+
+hudLabel : List (Html.Attribute msg)
+hudLabel =
+    [ Hattr.style "margin" "0"
+    , Hattr.style "text-transform" "uppercase"
+    , Hattr.style "letter-spacing" "0.12em"
+    , Hattr.style "font-size" "12px"
+    , Hattr.style "color" "rgba(248, 250, 252, 0.7)"
+    ]
+
+
+hudValue : List (Html.Attribute msg)
+hudValue =
+    [ Hattr.style "margin" "0"
+    , Hattr.style "font-size" "20px"
+    , Hattr.style "font-weight" "500"
+    , Hattr.style "line-height" "1.1"
+    , Hattr.style "color" "#f8fafc"
     ]
 
 

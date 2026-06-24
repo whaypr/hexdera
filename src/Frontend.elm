@@ -229,6 +229,14 @@ viewGame model =
                ]
         )
         [ viewFogOfWar model
+        , Html.div
+            Styles.hudPanel
+            [ Html.h3 Styles.hudLabel [ Html.text "Player" ]
+            , Html.p Styles.hudValue
+                [ Html.text
+                    ("Coordinates: (" ++ String.fromInt (Tuple.first model.thisPlayer) ++ ", " ++ String.fromInt (Tuple.second model.thisPlayer) ++ ")")
+                ]
+            ]
         ]
 
 
