@@ -205,9 +205,25 @@ updateFromBackend msg model =
             )
 
 
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Time.every Conf.gameTickMillis Tick
+view : Model -> Html Msg
+view model =
+    Html.div
+        Styles.pageRoot
+        [ Hlazy.lazy viewGame model
+        ]
+
+
+viewGame : Model -> Html Msg
+viewGame model =
+    Html.div
+        (Styles.gameShell
+            ++ [ Hattr.id "game-shell"
+               , Hattr.attribute "tabindex" "0"
+               , Hevent.on "keydown" (JD.map KeyPress (JD.field "key" JD.string))
+               ]
+        )
+        [ viewFogOfWar model
+        ]
 
 
 viewFogOfWar : Model -> Svg Msg
@@ -318,32 +334,6 @@ viewFogOfWar model =
         (List.map renderPoint (Set.toList model.visibleTiles))
 
 
-viewFogOfWarDemo : Model -> Html Msg
-viewFogOfWarDemo model =
-    Html.div
-        (Styles.gameShell
-            ++ [ Hattr.id "game-shell"
-               , Hattr.attribute "tabindex" "0"
-               , Hevent.on "keydown" (JD.map KeyPress (JD.field "key" JD.string))
-               ]
-        )
-        [ viewFogOfWar model
-        , Html.div
-            Styles.hudPanel
-            [ Html.h3 Styles.hudLabel [ Html.text "Player" ]
-            , Html.p Styles.hudValue
-                [ Html.text
-                    ("(" ++ String.fromInt (Tuple.first model.thisPlayer) ++ ", " ++ String.fromInt (Tuple.second model.thisPlayer) ++ ")")
-                ]
-            ]
-        ]
-
-
-view : Model -> Html Msg
-view model =
-    Html.div
-        Styles.pageRoot
-        [ Hlazy.lazy viewFogOfWarDemo model
-
-        -- , hr [] []
-        ]
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Time.every Conf.gameTickMillis Tick
