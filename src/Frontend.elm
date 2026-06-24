@@ -2,7 +2,6 @@ module Frontend exposing (Model, app)
 
 import Browser.Dom
 import Config as Conf
-import Dict
 import Helpers as Help
 import HexGrid
 import Html exposing (Html)
@@ -70,7 +69,10 @@ update msg model =
             ( model, Cmd.none )
 
         ThisPlayerPosition point ->
-            ( { model | thisPlayer = point }
+            ( { model
+                | thisPlayer = point
+                , visibleTiles = Help.visibleTilesAround point model.grid
+              }
             , L.sendToBackend (PlayerMoved point)
             )
 
@@ -110,9 +112,12 @@ update msg model =
                     Set.insert model.thisPlayer (Set.fromList model.otherPlayers)
 
                 pointsInFog =
-                    HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
+                    HexGrid.fogOfWarWithin model.thisPlayer (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
+
+                isFogged =
+                    Set.member point pointsInFog
             in
-            if Set.member point occupiedPlayers || Set.member point pointsInFog || HexGrid.distance model.thisPlayer point > Conf.placementRange then
+            if Set.member point occupiedPlayers || isFogged || HexGrid.distance model.thisPlayer point > Conf.placementRange then
                 ( model, Cmd.none )
 
             else
@@ -170,6 +175,7 @@ update msg model =
                 then
                     ( { model
                         | thisPlayer = newPoint
+                        , visibleTiles = Help.shiftVisibleTiles model.grid ( dx, dz ) model.visibleTiles
                         , moveCooldownRemaining = Conf.movementCooldownMillis
                       }
                     , L.sendToBackend (PlayerMoved newPoint)
@@ -191,7 +197,12 @@ updateFromBackend msg model =
             )
 
         YourPosition point ->
-            ( { model | thisPlayer = point }, Cmd.none )
+            ( { model
+                | thisPlayer = point
+                , visibleTiles = Help.visibleTilesAround point model.grid
+              }
+            , Cmd.none
+            )
 
 
 subscriptions : Model -> Sub Msg
@@ -211,9 +222,6 @@ viewFogOfWar model =
         ( cameraX, cameraY ) =
             model.cameraCenter
 
-        (HexGrid.HexGrid _ dict) =
-            model.grid
-
         otherPlayerPositions =
             Set.fromList model.otherPlayers
 
@@ -226,9 +234,9 @@ viewFogOfWar model =
             HexGrid.mkFlatTop Conf.hexSize Conf.hexSize (viewportCenterX - cameraX) (viewportCenterY - cameraY)
 
         pointsInFog =
-            HexGrid.fogOfWar model.thisPlayer model.obstacles model.grid
+            HexGrid.fogOfWarWithin model.thisPlayer (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
 
-        renderPoint ( point, tile ) =
+        renderPoint point =
             let
                 ( centerX, centerY ) =
                     HexGrid.hexToPixel layout point
@@ -242,6 +250,9 @@ viewFogOfWar model =
                 scaledCorners =
                     corners
                         |> List.map (\( x, y ) -> ( centerX + (x - centerX) * gapScale, centerY + (y - centerY) * gapScale ))
+
+                isFogged =
+                    Set.member point pointsInFog
             in
             Svg.g
                 [ Sevent.onMouseOver (HoverPoint point)
@@ -251,7 +262,7 @@ viewFogOfWar model =
                 [ Svg.polygon
                     [ Sattr.points (cornersToStr <| scaledCorners)
                     , Sattr.fill <|
-                        if Set.member point model.obstacles && Set.member point pointsInFog then
+                        if Set.member point model.obstacles && isFogged then
                             "#c0392b"
 
                         else if Set.member point model.obstacles && model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= Conf.placementRange then
@@ -260,7 +271,7 @@ viewFogOfWar model =
                         else if Set.member point model.obstacles then
                             "#e74c3c"
 
-                        else if Set.member point pointsInFog then
+                        else if isFogged then
                             "#bdbdbd"
 
                         else if model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= Conf.placementRange then
@@ -283,7 +294,7 @@ viewFogOfWar model =
                         ]
                         []
 
-                  else if Set.member point otherPlayerPositions && not (Set.member point pointsInFog) then
+                  else if Set.member point otherPlayerPositions && not isFogged then
                     Svg.circle
                         [ Sattr.cx (String.fromFloat centerX)
                         , Sattr.cy (String.fromFloat centerY)
@@ -304,7 +315,7 @@ viewFogOfWar model =
          ]
             ++ Styles.boardSvg
         )
-        (List.map renderPoint (Dict.toList dict))
+        (List.map renderPoint (Set.toList model.visibleTiles))
 
 
 viewFogOfWarDemo : Model -> Html Msg
@@ -317,6 +328,14 @@ viewFogOfWarDemo model =
                ]
         )
         [ viewFogOfWar model
+        , Html.div
+            Styles.hudPanel
+            [ Html.h3 Styles.hudLabel [ Html.text "Player" ]
+            , Html.p Styles.hudValue
+                [ Html.text
+                    ("(" ++ String.fromInt (Tuple.first model.thisPlayer) ++ ", " ++ String.fromInt (Tuple.second model.thisPlayer) ++ ")")
+                ]
+            ]
         ]
 
 

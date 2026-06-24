@@ -2,13 +2,13 @@ module Config exposing (..)
 
 import Dict
 import HexGrid
-import Set
+import Set exposing (Set)
 import Types exposing (..)
 
 
 gridSize : Int
 gridSize =
-    10
+    30
 
 
 hexSize : Float
@@ -24,6 +24,11 @@ viewportWidth =
 viewportHeight : Int
 viewportHeight =
     570
+
+
+visibleRadius : Int
+visibleRadius =
+    ceiling (max (toFloat viewportWidth / (3 * hexSize)) (toFloat viewportHeight / (2 * sqrt 3 * hexSize))) - 1
 
 
 cameraEaseMillis : Float
@@ -51,7 +56,7 @@ initialGrid =
     HexGrid.empty gridSize ()
 
 
-initialObstacles : Set.Set HexGrid.Point
+initialObstacles : Set HexGrid.Point
 initialObstacles =
     Set.fromList
         [ ( -5, 4 )
@@ -79,13 +84,14 @@ initialObstacles =
         ]
 
 
-initialFrontendModel : FrontendModel
-initialFrontendModel =
+initialFrontendModel : (HexGrid.Point -> HexGrid.HexGrid () -> Set HexGrid.Point) -> FrontendModel
+initialFrontendModel visibleTilesFunc =
     { grid = initialGrid
     , thisPlayer = ( 0, 0 )
     , hoverPoint = ( -1, -4 )
     , otherPlayers = []
     , obstacles = initialObstacles
+    , visibleTiles = visibleTilesFunc ( 0, 0 ) initialGrid
     , cameraCenter = ( 0, 0 )
     , moveCooldownRemaining = 0
     , lastTick = Nothing

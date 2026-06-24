@@ -13,6 +13,7 @@ type alias FrontendModel =
     , hoverPoint : HexGrid.Point
     , otherPlayers : List HexGrid.Point
     , obstacles : Set.Set HexGrid.Point
+    , visibleTiles : Set.Set HexGrid.Point
     , cameraCenter : ( Float, Float )
     , moveCooldownRemaining : Float
     , lastTick : Maybe Posix

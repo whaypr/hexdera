@@ -21,6 +21,11 @@ type HexGrid a
     = HexGrid Int (Dict Point a)
 
 
+toPoints : HexGrid a -> Set Point
+toPoints (HexGrid _ dict) =
+    Dict.keys dict |> Set.fromList
+
+
 toPoint : Int -> Int -> Point
 toPoint x z =
     ( x, z )
@@ -324,9 +329,17 @@ because its view is obstructed by obstacles.
 -}
 fogOfWar : Point -> Set Point -> HexGrid a -> Set Point
 fogOfWar eye obstacles grid =
+    fogOfWarWithin eye obstacles (toPoints grid)
+
+
+{-| Fog of war within a given set of points.
+This avoids needing a full grid when the caller only wants to inspect a
+viewport-sized subset.
+-}
+fogOfWarWithin : Point -> Set Point -> Set Point -> Set Point
+fogOfWarWithin eye obstacles points =
     let
-        accum : Point -> a -> Set Point -> Set Point
-        accum end _ obstructed =
+        accum end obstructed =
             let
                 path =
                     line eye end
@@ -346,7 +359,7 @@ fogOfWar eye obstacles grid =
             in
             Set.union obstructed finalFogPoints
     in
-    foldl accum Set.empty grid
+    Set.foldl accum Set.empty points
 
 
 {-| Return list of (Point, val) that satisfy the predicate.
