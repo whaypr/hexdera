@@ -75,31 +75,19 @@ updateFromFrontend _ clientId msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-                Just eye ->
+                Just _ ->
                     let
-                        fogged =
+                        nextObstacles =
                             if Set.member point model.obstacles then
-                                HexGrid.fogOfWar eye (Set.remove point model.obstacles) model.grid
+                                Set.remove point model.obstacles
 
                             else
-                                HexGrid.fogOfWar eye model.obstacles model.grid
+                                Set.insert point model.obstacles
+
+                        nextModel =
+                            { model | obstacles = nextObstacles }
                     in
-                    if Set.member point (occupiedPositions model) || Set.member point fogged then
-                        ( model, Cmd.none )
-
-                    else
-                        let
-                            nextObstacles =
-                                if Set.member point model.obstacles then
-                                    Set.remove point model.obstacles
-
-                                else
-                                    Set.insert point model.obstacles
-
-                            nextModel =
-                                { model | obstacles = nextObstacles }
-                        in
-                        ( nextModel, broadcastWorldUpdate nextModel )
+                    ( nextModel, broadcastWorldUpdate nextModel )
 
 
 subscriptions : Model -> Sub BackendMsg
