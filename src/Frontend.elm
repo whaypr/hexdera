@@ -247,6 +247,70 @@ view model =
         ]
 
 
+viewNamePrompt : Model -> Html Msg
+viewNamePrompt model =
+    if Help.isNamed model then
+        Html.text ""
+
+    else
+        Html.div
+            [ Hattr.style "position" "fixed"
+            , Hattr.style "inset" "0"
+            , Hattr.style "display" "grid"
+            , Hattr.style "place-items" "center"
+            , Hattr.style "background" "rgba(2, 6, 23, 0.54)"
+            , Hattr.style "backdrop-filter" "blur(10px)"
+            , Hattr.style "z-index" "20"
+            ]
+            [ Html.div
+                [ Hattr.style "width" "min(92vw, 360px)"
+                , Hattr.style "padding" "22px"
+                , Hattr.style "border-radius" "18px"
+                , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.14)"
+                , Hattr.style "background" "rgba(15, 23, 42, 0.92)"
+                , Hattr.style "box-shadow" "0 30px 70px rgba(2, 6, 23, 0.45)"
+                , Hattr.style "display" "flex"
+                , Hattr.style "flex-direction" "column"
+                , Hattr.style "gap" "14px"
+                ]
+                [ Html.h2
+                    [ Hattr.style "margin" "0"
+                    , Hattr.style "font-size" "20px"
+                    , Hattr.style "font-weight" "700"
+                    , Hattr.style "color" "#f8fafc"
+                    ]
+                    [ Html.text "Choose your name" ]
+                , Html.input
+                    [ Hattr.id "player-name-input"
+                    , Hattr.type_ "text"
+                    , Hattr.value model.thisPlayer.name
+                    , Hattr.placeholder "Enter a name"
+                    , Hevent.onInput PlayerNameChanged
+                    , Hattr.style "padding" "12px 14px"
+                    , Hattr.style "border-radius" "12px"
+                    , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.16)"
+                    , Hattr.style "background" "rgba(15, 23, 42, 0.72)"
+                    , Hattr.style "color" "#f8fafc"
+                    , Hattr.style "font-size" "16px"
+                    , Hattr.style "outline" "none"
+                    ]
+                    []
+                , Html.button
+                    [ Hevent.onClick ConfirmPlayerName
+                    , Hattr.style "padding" "11px 14px"
+                    , Hattr.style "border" "0"
+                    , Hattr.style "border-radius" "12px"
+                    , Hattr.style "background" "linear-gradient(135deg, #22c55e, #16a34a)"
+                    , Hattr.style "color" "white"
+                    , Hattr.style "font-size" "15px"
+                    , Hattr.style "font-weight" "700"
+                    , Hattr.style "cursor" "pointer"
+                    ]
+                    [ Html.text "Enter the game" ]
+                ]
+            ]
+
+
 viewGame : Model -> Html Msg
 viewGame model =
     Html.div
@@ -391,67 +455,3 @@ viewFogOfWar model =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Time.every Conf.gameTickMillis Tick
-
-
-viewNamePrompt : Model -> Html Msg
-viewNamePrompt model =
-    if Help.isNamed model then
-        Html.text ""
-
-    else
-        Html.div
-            [ Hattr.style "position" "fixed"
-            , Hattr.style "inset" "0"
-            , Hattr.style "display" "grid"
-            , Hattr.style "place-items" "center"
-            , Hattr.style "background" "rgba(2, 6, 23, 0.54)"
-            , Hattr.style "backdrop-filter" "blur(10px)"
-            , Hattr.style "z-index" "20"
-            ]
-            [ Html.div
-                [ Hattr.style "width" "min(92vw, 360px)"
-                , Hattr.style "padding" "22px"
-                , Hattr.style "border-radius" "18px"
-                , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.14)"
-                , Hattr.style "background" "rgba(15, 23, 42, 0.92)"
-                , Hattr.style "box-shadow" "0 30px 70px rgba(2, 6, 23, 0.45)"
-                , Hattr.style "display" "flex"
-                , Hattr.style "flex-direction" "column"
-                , Hattr.style "gap" "14px"
-                ]
-                [ Html.h2
-                    [ Hattr.style "margin" "0"
-                    , Hattr.style "font-size" "20px"
-                    , Hattr.style "font-weight" "700"
-                    , Hattr.style "color" "#f8fafc"
-                    ]
-                    [ Html.text "Choose your name" ]
-                , Html.input
-                    [ Hattr.id "player-name-input"
-                    , Hattr.type_ "text"
-                    , Hattr.value model.thisPlayer.name
-                    , Hattr.placeholder "Enter a name"
-                    , Hevent.onInput PlayerNameChanged
-                    , Hattr.style "padding" "12px 14px"
-                    , Hattr.style "border-radius" "12px"
-                    , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.16)"
-                    , Hattr.style "background" "rgba(15, 23, 42, 0.72)"
-                    , Hattr.style "color" "#f8fafc"
-                    , Hattr.style "font-size" "16px"
-                    , Hattr.style "outline" "none"
-                    ]
-                    []
-                , Html.button
-                    [ Hevent.onClick ConfirmPlayerName
-                    , Hattr.style "padding" "11px 14px"
-                    , Hattr.style "border" "0"
-                    , Hattr.style "border-radius" "12px"
-                    , Hattr.style "background" "linear-gradient(135deg, #22c55e, #16a34a)"
-                    , Hattr.style "color" "white"
-                    , Hattr.style "font-size" "15px"
-                    , Hattr.style "font-weight" "700"
-                    , Hattr.style "cursor" "pointer"
-                    ]
-                    [ Html.text "Enter the game" ]
-                ]
-            ]
