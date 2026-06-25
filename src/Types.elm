@@ -13,13 +13,20 @@ type alias Player =
     }
 
 
+type BlockKind
+    = Wall
+    | Hideout
+
+
 type alias FrontendModel =
     { grid : HexGrid.HexGrid ()
     , thisPlayer : Player
     , playerNameConfirmed : Bool
+    , selectedBlock : BlockKind
     , hoverPoint : HexGrid.Point
     , otherPlayers : List Player
-    , obstacles : Set.Set HexGrid.Point
+    , walls : Set.Set HexGrid.Point
+    , hideouts : Set.Set HexGrid.Point
     , visibleTiles : Set.Set HexGrid.Point
     , pointsInFog : Set.Set HexGrid.Point
     , cameraCenter : ( Float, Float )
@@ -31,16 +38,18 @@ type alias FrontendModel =
 type alias BackendModel =
     { grid : HexGrid.HexGrid ()
     , players : Dict L.ClientId Player
-    , obstacles : Set.Set HexGrid.Point
+    , walls : Set.Set HexGrid.Point
+    , hideouts : Set.Set HexGrid.Point
     }
 
 
 type FrontendMsg
     = PlayerNameChanged String
     | ConfirmPlayerName
+    | SelectBlock BlockKind
     | ThisPlayerPosition HexGrid.Point
     | HoverPoint HexGrid.Point
-    | ToggleObstacle HexGrid.Point
+    | ToggleBlock HexGrid.Point
     | KeyPress String
     | Tick Posix
     | NoOp
@@ -49,7 +58,7 @@ type FrontendMsg
 type ToBackend
     = SetPlayerName String
     | PlayerMoved HexGrid.Point
-    | ObstacleToggled HexGrid.Point
+    | BlockToggled BlockKind HexGrid.Point
 
 
 type BackendMsg
@@ -61,6 +70,7 @@ type BackendMsg
 type ToFrontend
     = WorldUpdated
         { players : List Player
-        , obstacles : Set.Set HexGrid.Point
+        , walls : Set.Set HexGrid.Point
+        , hideouts : Set.Set HexGrid.Point
         }
     | YourPosition HexGrid.Point

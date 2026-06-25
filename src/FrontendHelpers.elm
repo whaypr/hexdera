@@ -62,7 +62,7 @@ shiftVisibleTiles grid delta visibleTiles =
 
 pointsInFogFor : FrontendModel -> Set.Set HexGrid.Point
 pointsInFogFor model =
-    HexGrid.fogOfWarWithin model.thisPlayer.point (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
+    HexGrid.fogOfWarWithin model.thisPlayer.point (Set.intersect model.walls model.visibleTiles) model.visibleTiles
 
 
 withPointsInFog : FrontendModel -> FrontendModel

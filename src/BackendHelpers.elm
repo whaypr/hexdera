@@ -14,7 +14,8 @@ worldUpdateForClient clientId model =
             Dict.toList model.players
                 |> List.filter (\( otherClientId, _ ) -> otherClientId /= clientId)
                 |> List.map Tuple.second
-        , obstacles = model.obstacles
+        , walls = model.walls
+        , hideouts = model.hideouts
         }
 
 
@@ -49,7 +50,8 @@ spawnPoint model =
             occupiedPositions model
 
         isFree point =
-            not (Set.member point model.obstacles)
+            not (Set.member point model.walls)
+                && not (Set.member point model.hideouts)
                 && not (Set.member point blockedPositions)
     in
     candidates

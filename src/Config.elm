@@ -71,8 +71,8 @@ initialGrid =
     HexGrid.empty gridSize ()
 
 
-initialObstacles : Set HexGrid.Point
-initialObstacles =
+initialWalls : Set HexGrid.Point
+initialWalls =
     Set.fromList
         [ ( -5, 4 )
         , ( -4, 3 )
@@ -99,14 +99,25 @@ initialObstacles =
         ]
 
 
+initialHideouts : Set HexGrid.Point
+initialHideouts =
+    Set.fromList
+        [ ( 5, -1 )
+        , ( 6, -1 )
+        , ( 5, 0 )
+        ]
+
+
 initialFrontendModel : (HexGrid.Point -> HexGrid.HexGrid () -> Set HexGrid.Point) -> FrontendModel
 initialFrontendModel visibleTilesFunc =
     { grid = initialGrid
     , thisPlayer = { name = "", point = ( 0, 0 ) }
     , playerNameConfirmed = False
+    , selectedBlock = Wall
     , hoverPoint = ( -1, -4 )
     , otherPlayers = []
-    , obstacles = initialObstacles
+    , walls = initialWalls
+    , hideouts = initialHideouts
     , visibleTiles = visibleTilesFunc ( 0, 0 ) initialGrid
     , pointsInFog = Set.empty
     , cameraCenter = ( 0, 0 )
@@ -119,5 +130,6 @@ initialBackendModel : BackendModel
 initialBackendModel =
     { grid = initialGrid
     , players = Dict.empty
-    , obstacles = initialObstacles
+    , walls = initialWalls
+    , hideouts = initialHideouts
     }

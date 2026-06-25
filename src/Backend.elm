@@ -90,24 +90,40 @@ updateFromFrontend _ clientId msg model =
                         ]
                     )
 
-        ObstacleToggled point ->
+        BlockToggled blockType point ->
             case Dict.get clientId model.players of
                 Nothing ->
                     ( model, Cmd.none )
 
                 Just _ ->
                     let
-                        nextObstacles =
-                            if Set.member point model.obstacles then
-                                Set.remove point model.obstacles
-
-                            else
-                                Set.insert point model.obstacles
-
                         nextModel =
-                            { model | obstacles = nextObstacles }
+                            case blockType of
+                                Wall ->
+                                    if Set.member point model.walls then
+                                        { model | walls = Set.remove point model.walls }
+
+                                    else if Set.member point model.hideouts then
+                                        model
+
+                                    else
+                                        { model | walls = Set.insert point model.walls }
+
+                                Hideout ->
+                                    if Set.member point model.hideouts then
+                                        { model | hideouts = Set.remove point model.hideouts }
+
+                                    else if Set.member point model.walls then
+                                        model
+
+                                    else
+                                        { model | hideouts = Set.insert point model.hideouts }
                     in
-                    ( nextModel, Help.broadcastWorldUpdate nextModel )
+                    if nextModel == model then
+                        ( model, Cmd.none )
+
+                    else
+                        ( nextModel, Help.broadcastWorldUpdate nextModel )
 
 
 subscriptions : Model -> Sub BackendMsg

@@ -93,6 +93,9 @@ update msg model =
                     ]
                 )
 
+        SelectBlock blockType ->
+            ( { model | selectedBlock = blockType }, Cmd.none )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -135,32 +138,61 @@ update msg model =
         HoverPoint point ->
             ( { model | hoverPoint = point }, Cmd.none )
 
-        ToggleObstacle point ->
+        ToggleBlock point ->
             let
                 occupiedPlayers =
                     Set.insert model.thisPlayer.point (Set.fromList (List.map .point model.otherPlayers))
 
+                hasSelectedBlock =
+                    case model.selectedBlock of
+                        Wall ->
+                            Set.member point model.walls
+
+                        Hideout ->
+                            Set.member point model.hideouts
+
+                isOccupied =
+                    Set.member point model.walls
+                        || Set.member point model.hideouts
+                        || Set.member point occupiedPlayers
+
                 isFogged =
                     Set.member point model.pointsInFog
             in
-            if Set.member point occupiedPlayers || isFogged || HexGrid.distance model.thisPlayer.point point > Conf.placementRange then
+            if hasSelectedBlock then
+                let
+                    nextModel =
+                        case model.selectedBlock of
+                            Wall ->
+                                { model | walls = Set.remove point model.walls }
+
+                            Hideout ->
+                                { model | hideouts = Set.remove point model.hideouts }
+                in
+                ( Help.withPointsInFog nextModel
+                , L.sendToBackend (BlockToggled model.selectedBlock point)
+                )
+
+            else if
+                isOccupied
+                    || isFogged
+                    || HexGrid.distance model.thisPlayer.point point
+                    > Conf.placementRange
+            then
                 ( model, Cmd.none )
 
             else
                 let
-                    nextObstacles =
-                        if Set.member point model.obstacles then
-                            Set.remove point model.obstacles
-
-                        else
-                            Set.insert point model.obstacles
-
                     nextModel =
-                        { model | obstacles = nextObstacles }
-                            |> Help.withPointsInFog
+                        case model.selectedBlock of
+                            Wall ->
+                                { model | walls = Set.insert point model.walls }
+
+                            Hideout ->
+                                { model | hideouts = Set.insert point model.hideouts }
                 in
-                ( nextModel
-                , L.sendToBackend (ObstacleToggled point)
+                ( Help.withPointsInFog nextModel
+                , L.sendToBackend (BlockToggled model.selectedBlock point)
                 )
 
         KeyPress key ->
@@ -200,7 +232,7 @@ update msg model =
                 in
                 if
                     HexGrid.contains newPoint model.grid
-                        && not (Set.member newPoint model.obstacles)
+                        && not (Set.member newPoint model.walls)
                         && not (Set.member newPoint (Set.fromList (List.map .point model.otherPlayers)))
                 then
                     ( { model
@@ -222,7 +254,8 @@ updateFromBackend msg model =
         WorldUpdated world ->
             ( { model
                 | otherPlayers = world.players
-                , obstacles = world.obstacles
+                , walls = world.walls
+                , hideouts = world.hideouts
               }
                 |> Help.withPointsInFog
             , Cmd.none
@@ -321,7 +354,8 @@ viewGame model =
                , Hevent.on "keydown" (JD.map KeyPress (JD.field "key" JD.string))
                ]
         )
-        [ viewFogOfWar model
+        [ viewInventoryPanel model
+        , viewFogOfWar model
         , Html.div
             Styles.hudPanel
             [ Html.h3 Styles.hudLabel [ Html.text "Name" ]
@@ -374,24 +408,36 @@ viewFogOfWar model =
                     corners
                         |> List.map (\( x, y ) -> ( centerX + (x - centerX) * Conf.gapScale, centerY + (y - centerY) * Conf.gapScale ))
 
+                bushShadowCorners =
+                    corners
+                        |> List.map (\( x, y ) -> ( centerX + (x - centerX) * 0.88 + 1.5, centerY + (y - centerY) * 0.88 + 1.5 ))
+
+                bushCorners =
+                    corners
+                        |> List.map (\( x, y ) -> ( centerX + (x - centerX) * 0.82, centerY + (y - centerY) * 0.82 ))
+
+                bushHighlightCorners =
+                    corners
+                        |> List.map (\( x, y ) -> ( centerX + (x - centerX) * 0.62, centerY + (y - centerY) * 0.62 ))
+
                 isFogged =
                     Set.member point model.pointsInFog
             in
             Svg.g
                 [ Sevent.onMouseOver (HoverPoint point)
-                , Sevent.onClick (ToggleObstacle point)
+                , Sevent.onClick (ToggleBlock point)
                 ]
                 -- ground and environment
                 [ Svg.polygon
                     [ Sattr.points (cornersToStr scaledCorners)
                     , Sattr.fill <|
-                        if Set.member point model.obstacles && isFogged then
+                        if Set.member point model.walls && isFogged then
                             "#c0392b"
 
-                        else if Set.member point model.obstacles && model.hoverPoint == point && HexGrid.distance model.thisPlayer.point point <= Conf.placementRange then
+                        else if Set.member point model.walls && model.hoverPoint == point && HexGrid.distance model.thisPlayer.point point <= Conf.placementRange then
                             "#c0392b"
 
-                        else if Set.member point model.obstacles then
+                        else if Set.member point model.walls then
                             "#e74c3c"
 
                         else if isFogged then
@@ -428,12 +474,50 @@ viewFogOfWar model =
                             ]
                             []
                         , Svg.text_
-                            (Styles.playerNameTag
-                                ++ [ Sattr.x (String.fromFloat centerX)
-                                   , Sattr.y (String.fromFloat (centerY - 24))
-                                   ]
+                            (if Set.member point model.hideouts then
+                                []
+
+                             else
+                                Styles.playerNameTag
+                                    ++ [ Sattr.x (String.fromFloat centerX)
+                                       , Sattr.y (String.fromFloat (centerY - 24))
+                                       ]
                             )
                             [ Svg.text (Maybe.withDefault "" (Dict.get point otherPlayerNames)) ]
+                        ]
+
+                  else
+                    Svg.text_ [] []
+
+                -- hideouts
+                , if Set.member point model.hideouts && not isFogged then
+                    Svg.g []
+                        [ Svg.polygon
+                            [ Sattr.points (cornersToStr bushShadowCorners)
+                            , Sattr.fill "#02160a"
+                            , Sattr.fillOpacity "0.35"
+                            , Sattr.stroke "none"
+                            ]
+                            []
+                        , Svg.polygon
+                            [ Sattr.points (cornersToStr bushCorners)
+                            , Sattr.fill "#166534"
+                            , Sattr.fillOpacity "0.95"
+                            , Sattr.stroke "#0f3d1e"
+                            , Sattr.strokeWidth "4"
+                            , Sattr.strokeLinejoin "round"
+                            ]
+                            []
+                        , Svg.polygon
+                            [ Sattr.points (cornersToStr bushHighlightCorners)
+                            , Sattr.fill "#86efac"
+                            , Sattr.fillOpacity "0.16"
+                            , Sattr.stroke "#bbf7d0"
+                            , Sattr.strokeOpacity "0.28"
+                            , Sattr.strokeWidth "2"
+                            , Sattr.strokeLinejoin "round"
+                            ]
+                            []
                         ]
 
                   else
