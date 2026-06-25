@@ -1,4 +1,4 @@
-module Styles exposing (boardSvg, eyeText, gameShell, hudLabel, hudPanel, hudValue, pageRoot, pathText, playerNameTag)
+module Styles exposing (..)
 
 import Html
 import Html.Attributes as Hattr
@@ -83,19 +83,9 @@ hudValue =
     ]
 
 
-eyeText : List (Svg.Attribute msg)
-eyeText =
-    [ Sattr.stroke "white"
-    , Sattr.fill "white"
-    , Sattr.style "font-family: monospace; font-size: 18px;"
     ]
 
 
-pathText : List (Svg.Attribute msg)
-pathText =
-    [ Sattr.stroke "black"
-    , Sattr.fill "black"
-    , Sattr.style "font-family: monospace; font-size: 24px;"
     ]
 
 
