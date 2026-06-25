@@ -367,15 +367,12 @@ viewFogOfWar model =
                 ( centerX, centerY ) =
                     HexGrid.hexToPixel layout point
 
-                gapScale =
-                    0.996
-
                 corners =
                     HexGrid.polygonCorners layout point
 
                 scaledCorners =
                     corners
-                        |> List.map (\( x, y ) -> ( centerX + (x - centerX) * gapScale, centerY + (y - centerY) * gapScale ))
+                        |> List.map (\( x, y ) -> ( centerX + (x - centerX) * Conf.gapScale, centerY + (y - centerY) * Conf.gapScale ))
 
                 isFogged =
                     Set.member point model.pointsInFog

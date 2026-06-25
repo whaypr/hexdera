@@ -26,6 +26,11 @@ hexSize =
     35
 
 
+gapScale : Float
+gapScale =
+    0.996
+
+
 viewportWidth : Int
 viewportWidth =
     600
