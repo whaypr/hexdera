@@ -11,6 +11,11 @@ defaultPlayerName =
     ""
 
 
+maxNameLength : Int
+maxNameLength =
+    10
+
+
 gridSize : Int
 gridSize =
     30

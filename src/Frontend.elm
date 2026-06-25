@@ -283,6 +283,7 @@ viewNamePrompt model =
                 , Html.input
                     [ Hattr.id "player-name-input"
                     , Hattr.type_ "text"
+                    , Hattr.attribute "maxlength" (String.fromInt Conf.maxNameLength)
                     , Hattr.value model.thisPlayer.name
                     , Hattr.placeholder "Enter a name"
                     , Hevent.onInput PlayerNameChanged
