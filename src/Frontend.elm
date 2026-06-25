@@ -2,6 +2,7 @@ module Frontend exposing (Model, app)
 
 import Browser.Dom
 import Config as Conf
+import Dict
 import Helpers as Help
 import HexGrid
 import Html exposing (Html)
@@ -58,20 +59,46 @@ init =
             Conf.initialFrontendModel Help.visibleTilesAround
                 |> Help.withPointsInFog
     in
-    ( { initialModel | cameraCenter = Help.cameraCenterForPoint initialModel.thisPlayer }
-    , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
+    ( { initialModel | cameraCenter = Help.cameraCenterForPoint initialModel.thisPlayer.point }
+    , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "player-name-input")
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        PlayerNameChanged name ->
+            ( { model
+                | thisPlayer = { name = name, point = model.thisPlayer.point }
+              }
+            , Cmd.none
+            )
+
+        ConfirmPlayerName ->
+            let
+                confirmedName =
+                    String.trim model.thisPlayer.name
+            in
+            if String.isEmpty confirmedName then
+                ( model, Cmd.none )
+
+            else
+                ( { model
+                    | thisPlayer = { name = confirmedName, point = model.thisPlayer.point }
+                    , playerNameConfirmed = True
+                  }
+                , Cmd.batch
+                    [ L.sendToBackend (SetPlayerName confirmedName)
+                    , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "game-shell")
+                    ]
+                )
+
         NoOp ->
             ( model, Cmd.none )
 
         ThisPlayerPosition point ->
             ( { model
-                | thisPlayer = point
+                | thisPlayer = { name = model.thisPlayer.name, point = point }
                 , visibleTiles = Help.visibleTilesAround point model.grid
               }
                 |> Help.withPointsInFog
@@ -87,7 +114,7 @@ update msg model =
                     model.cameraCenter
 
                 ( targetX, targetY ) =
-                    Help.cameraCenterForPoint model.thisPlayer
+                    Help.cameraCenterForPoint model.thisPlayer.point
 
                 nextCameraCenter =
                     ( Help.approach currentX targetX delta
@@ -111,12 +138,12 @@ update msg model =
         ToggleObstacle point ->
             let
                 occupiedPlayers =
-                    Set.insert model.thisPlayer (Set.fromList model.otherPlayers)
+                    Set.insert model.thisPlayer.point (Set.fromList (List.map .point model.otherPlayers))
 
                 isFogged =
                     Set.member point model.pointsInFog
             in
-            if Set.member point occupiedPlayers || isFogged || HexGrid.distance model.thisPlayer point > Conf.placementRange then
+            if Set.member point occupiedPlayers || isFogged || HexGrid.distance model.thisPlayer.point point > Conf.placementRange then
                 ( model, Cmd.none )
 
             else
@@ -143,7 +170,7 @@ update msg model =
             else
                 let
                     ( x, z ) =
-                        model.thisPlayer
+                        model.thisPlayer.point
 
                     ( dx, dz ) =
                         case key of
@@ -174,10 +201,10 @@ update msg model =
                 if
                     HexGrid.contains newPoint model.grid
                         && not (Set.member newPoint model.obstacles)
-                        && not (Set.member newPoint (Set.fromList model.otherPlayers))
+                        && not (Set.member newPoint (Set.fromList (List.map .point model.otherPlayers)))
                 then
                     ( { model
-                        | thisPlayer = newPoint
+                        | thisPlayer = { name = model.thisPlayer.name, point = newPoint }
                         , visibleTiles = Help.shiftVisibleTiles model.grid ( dx, dz ) model.visibleTiles
                         , moveCooldownRemaining = Conf.movementCooldownMillis
                       }
@@ -203,7 +230,7 @@ updateFromBackend msg model =
 
         YourPosition point ->
             ( { model
-                | thisPlayer = point
+                | thisPlayer = { name = model.thisPlayer.name, point = point }
                 , visibleTiles = Help.visibleTilesAround point model.grid
               }
                 |> Help.withPointsInFog
@@ -216,6 +243,7 @@ view model =
     Html.div
         Styles.pageRoot
         [ Hlazy.lazy viewGame model
+        , viewNamePrompt model
         ]
 
 
@@ -231,10 +259,13 @@ viewGame model =
         [ viewFogOfWar model
         , Html.div
             Styles.hudPanel
-            [ Html.h3 Styles.hudLabel [ Html.text "Player" ]
+            [ Html.h3 Styles.hudLabel [ Html.text "Name" ]
+            , Html.p Styles.hudValue
+                [ Html.text model.thisPlayer.name ]
+            , Html.h3 Styles.hudLabel [ Html.text "Coordinates" ]
             , Html.p Styles.hudValue
                 [ Html.text
-                    ("Coordinates: (" ++ String.fromInt (Tuple.first model.thisPlayer) ++ ", " ++ String.fromInt (Tuple.second model.thisPlayer) ++ ")")
+                    ("(" ++ String.fromInt (Tuple.first model.thisPlayer.point) ++ ", " ++ String.fromInt (Tuple.second model.thisPlayer.point) ++ ")")
                 ]
             ]
         ]
@@ -253,7 +284,10 @@ viewFogOfWar model =
             model.cameraCenter
 
         otherPlayerPositions =
-            Set.fromList model.otherPlayers
+            Set.fromList (List.map .point model.otherPlayers)
+
+        otherPlayerNames =
+            Dict.fromList (List.map (\player -> ( player.point, player.name )) model.otherPlayers)
 
         cornersToStr corners =
             corners
@@ -287,12 +321,12 @@ viewFogOfWar model =
                 ]
                 -- ground and environment
                 [ Svg.polygon
-                    [ Sattr.points (cornersToStr <| scaledCorners)
+                    [ Sattr.points (cornersToStr scaledCorners)
                     , Sattr.fill <|
                         if Set.member point model.obstacles && isFogged then
                             "#c0392b"
 
-                        else if Set.member point model.obstacles && model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= Conf.placementRange then
+                        else if Set.member point model.obstacles && model.hoverPoint == point && HexGrid.distance model.thisPlayer.point point <= Conf.placementRange then
                             "#c0392b"
 
                         else if Set.member point model.obstacles then
@@ -301,16 +335,15 @@ viewFogOfWar model =
                         else if isFogged then
                             "#bdbdbd"
 
-                        else if model.hoverPoint == point && HexGrid.distance model.thisPlayer point <= Conf.placementRange then
+                        else if model.hoverPoint == point && HexGrid.distance model.thisPlayer.point point <= Conf.placementRange then
                             "#f1c40f"
 
                         else
                             "white"
                     ]
                     []
-
                 -- players
-                , if point == model.thisPlayer then
+                , if point == model.thisPlayer.point then
                     Svg.circle
                         [ Sattr.cx (String.fromFloat centerX)
                         , Sattr.cy (String.fromFloat centerY)
@@ -322,14 +355,23 @@ viewFogOfWar model =
                         []
 
                   else if Set.member point otherPlayerPositions && not isFogged then
-                    Svg.circle
-                        [ Sattr.cx (String.fromFloat centerX)
-                        , Sattr.cy (String.fromFloat centerY)
-                        , Sattr.r "15"
-                        , Sattr.fill "#8e44ad"
-                        , Sattr.strokeWidth "0"
+                    Svg.g []
+                        [ Svg.circle
+                            [ Sattr.cx (String.fromFloat centerX)
+                            , Sattr.cy (String.fromFloat centerY)
+                            , Sattr.r "15"
+                            , Sattr.fill "#8e44ad"
+                            , Sattr.strokeWidth "0"
+                            ]
+                            []
+                        , Svg.text_
+                            (Styles.playerNameTag
+                                ++ [ Sattr.x (String.fromFloat centerX)
+                                   , Sattr.y (String.fromFloat (centerY - 24))
+                                   ]
+                            )
+                            [ Svg.text (Maybe.withDefault "" (Dict.get point otherPlayerNames)) ]
                         ]
-                        []
 
                   else
                     Svg.text_ [] []
@@ -348,3 +390,67 @@ viewFogOfWar model =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Time.every Conf.gameTickMillis Tick
+
+
+viewNamePrompt : Model -> Html Msg
+viewNamePrompt model =
+    if Help.isNamed model then
+        Html.text ""
+
+    else
+        Html.div
+            [ Hattr.style "position" "fixed"
+            , Hattr.style "inset" "0"
+            , Hattr.style "display" "grid"
+            , Hattr.style "place-items" "center"
+            , Hattr.style "background" "rgba(2, 6, 23, 0.54)"
+            , Hattr.style "backdrop-filter" "blur(10px)"
+            , Hattr.style "z-index" "20"
+            ]
+            [ Html.div
+                [ Hattr.style "width" "min(92vw, 360px)"
+                , Hattr.style "padding" "22px"
+                , Hattr.style "border-radius" "18px"
+                , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.14)"
+                , Hattr.style "background" "rgba(15, 23, 42, 0.92)"
+                , Hattr.style "box-shadow" "0 30px 70px rgba(2, 6, 23, 0.45)"
+                , Hattr.style "display" "flex"
+                , Hattr.style "flex-direction" "column"
+                , Hattr.style "gap" "14px"
+                ]
+                [ Html.h2
+                    [ Hattr.style "margin" "0"
+                    , Hattr.style "font-size" "20px"
+                    , Hattr.style "font-weight" "700"
+                    , Hattr.style "color" "#f8fafc"
+                    ]
+                    [ Html.text "Choose your name" ]
+                , Html.input
+                    [ Hattr.id "player-name-input"
+                    , Hattr.type_ "text"
+                    , Hattr.value model.thisPlayer.name
+                    , Hattr.placeholder "Enter a name"
+                    , Hevent.onInput PlayerNameChanged
+                    , Hattr.style "padding" "12px 14px"
+                    , Hattr.style "border-radius" "12px"
+                    , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.16)"
+                    , Hattr.style "background" "rgba(15, 23, 42, 0.72)"
+                    , Hattr.style "color" "#f8fafc"
+                    , Hattr.style "font-size" "16px"
+                    , Hattr.style "outline" "none"
+                    ]
+                    []
+                , Html.button
+                    [ Hevent.onClick ConfirmPlayerName
+                    , Hattr.style "padding" "11px 14px"
+                    , Hattr.style "border" "0"
+                    , Hattr.style "border-radius" "12px"
+                    , Hattr.style "background" "linear-gradient(135deg, #22c55e, #16a34a)"
+                    , Hattr.style "color" "white"
+                    , Hattr.style "font-size" "15px"
+                    , Hattr.style "font-weight" "700"
+                    , Hattr.style "cursor" "pointer"
+                    ]
+                    [ Html.text "Enter the game" ]
+                ]
+            ]

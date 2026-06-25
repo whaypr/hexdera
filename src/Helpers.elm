@@ -7,6 +7,11 @@ import Time exposing (Posix)
 import Types exposing (..)
 
 
+isNamed : FrontendModel -> Bool
+isNamed model =
+    model.playerNameConfirmed && not (String.isEmpty (String.trim model.thisPlayer.name))
+
+
 cameraCenterForPoint : HexGrid.Point -> ( Float, Float )
 cameraCenterForPoint point =
     let
@@ -57,7 +62,7 @@ shiftVisibleTiles grid delta visibleTiles =
 
 pointsInFogFor : FrontendModel -> Set.Set HexGrid.Point
 pointsInFogFor model =
-    HexGrid.fogOfWarWithin model.thisPlayer (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
+    HexGrid.fogOfWarWithin model.thisPlayer.point (Set.intersect model.obstacles model.visibleTiles) model.visibleTiles
 
 
 withPointsInFog : FrontendModel -> FrontendModel

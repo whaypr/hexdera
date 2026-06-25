@@ -6,6 +6,11 @@ import Set exposing (Set)
 import Types exposing (..)
 
 
+defaultPlayerName : String
+defaultPlayerName =
+    ""
+
+
 gridSize : Int
 gridSize =
     30
@@ -87,7 +92,8 @@ initialObstacles =
 initialFrontendModel : (HexGrid.Point -> HexGrid.HexGrid () -> Set HexGrid.Point) -> FrontendModel
 initialFrontendModel visibleTilesFunc =
     { grid = initialGrid
-    , thisPlayer = ( 0, 0 )
+    , thisPlayer = { name = "", point = ( 0, 0 ) }
+    , playerNameConfirmed = False
     , hoverPoint = ( -1, -4 )
     , otherPlayers = []
     , obstacles = initialObstacles

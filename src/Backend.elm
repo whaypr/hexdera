@@ -34,8 +34,11 @@ update msg model =
                 spawn =
                     spawnPoint model
 
+                nextPlayer =
+                    { name = Conf.defaultPlayerName, point = spawn }
+
                 nextModel =
-                    { model | players = Dict.insert clientId spawn model.players }
+                    { model | players = Dict.insert clientId nextPlayer model.players }
             in
             ( nextModel
             , Cmd.batch
@@ -58,17 +61,34 @@ update msg model =
 updateFromFrontend : L.SessionId -> L.ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend _ clientId msg model =
     case msg of
+        SetPlayerName name ->
+            case Dict.get clientId model.players of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just player ->
+                    let
+                        nextModel =
+                            { model | players = Dict.insert clientId { player | name = name } model.players }
+                    in
+                    ( nextModel, broadcastWorldUpdate nextModel )
+
         PlayerMoved point ->
-            let
-                updatedModel =
-                    { model | players = Dict.insert clientId point model.players }
-            in
-            ( updatedModel
-            , Cmd.batch
-                [ L.sendToFrontend clientId (YourPosition point)
-                , broadcastWorldUpdate updatedModel
-                ]
-            )
+            case Dict.get clientId model.players of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just player ->
+                    let
+                        updatedModel =
+                            { model | players = Dict.insert clientId { player | point = point } model.players }
+                    in
+                    ( updatedModel
+                    , Cmd.batch
+                        [ L.sendToFrontend clientId (YourPosition point)
+                        , broadcastWorldUpdate updatedModel
+                        ]
+                    )
 
         ObstacleToggled point ->
             case Dict.get clientId model.players of
@@ -125,6 +145,7 @@ worldUpdateForClient clientId model =
 occupiedPositions : Model -> Set.Set HexGrid.Point
 occupiedPositions model =
     Dict.values model.players
+        |> List.map .point
         |> Set.fromList
 
 
