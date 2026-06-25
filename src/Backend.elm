@@ -1,8 +1,8 @@
 module Backend exposing (Model, app)
 
+import BackendHelpers as Help
 import Config as Conf
 import Dict
-import HexGrid
 import Lamdera as L
 import Set
 import Types exposing (..)
@@ -32,7 +32,7 @@ update msg model =
         ClientConnected _ clientId ->
             let
                 spawn =
-                    spawnPoint model
+                    Help.spawnPoint model
 
                 nextPlayer =
                     { name = Conf.defaultPlayerName, point = spawn }
@@ -43,7 +43,7 @@ update msg model =
             ( nextModel
             , Cmd.batch
                 [ L.sendToFrontend clientId (YourPosition spawn)
-                , broadcastWorldUpdate nextModel
+                , Help.broadcastWorldUpdate nextModel
                 ]
             )
 
@@ -52,7 +52,7 @@ update msg model =
                 nextModel =
                     { model | players = Dict.remove clientId model.players }
             in
-            ( nextModel, broadcastWorldUpdate nextModel )
+            ( nextModel, Help.broadcastWorldUpdate nextModel )
 
         BNoOp ->
             ( model, Cmd.none )
@@ -71,7 +71,7 @@ updateFromFrontend _ clientId msg model =
                         nextModel =
                             { model | players = Dict.insert clientId { player | name = name } model.players }
                     in
-                    ( nextModel, broadcastWorldUpdate nextModel )
+                    ( nextModel, Help.broadcastWorldUpdate nextModel )
 
         PlayerMoved point ->
             case Dict.get clientId model.players of
@@ -86,7 +86,7 @@ updateFromFrontend _ clientId msg model =
                     ( updatedModel
                     , Cmd.batch
                         [ L.sendToFrontend clientId (YourPosition point)
-                        , broadcastWorldUpdate updatedModel
+                        , Help.broadcastWorldUpdate updatedModel
                         ]
                     )
 
@@ -107,7 +107,7 @@ updateFromFrontend _ clientId msg model =
                         nextModel =
                             { model | obstacles = nextObstacles }
                     in
-                    ( nextModel, broadcastWorldUpdate nextModel )
+                    ( nextModel, Help.broadcastWorldUpdate nextModel )
 
 
 subscriptions : Model -> Sub BackendMsg
@@ -116,54 +116,3 @@ subscriptions _ =
         [ L.onConnect ClientConnected
         , L.onDisconnect ClientDisconnected
         ]
-
-
-broadcastWorldUpdate : Model -> Cmd BackendMsg
-broadcastWorldUpdate model =
-    Dict.foldl
-        (\clientId _ commands ->
-            Cmd.batch
-                [ commands
-                , L.sendToFrontend clientId (worldUpdateForClient clientId model)
-                ]
-        )
-        Cmd.none
-        model.players
-
-
-worldUpdateForClient : L.ClientId -> Model -> ToFrontend
-worldUpdateForClient clientId model =
-    WorldUpdated
-        { players =
-            Dict.toList model.players
-                |> List.filter (\( otherClientId, _ ) -> otherClientId /= clientId)
-                |> List.map Tuple.second
-        , obstacles = model.obstacles
-        }
-
-
-occupiedPositions : Model -> Set.Set HexGrid.Point
-occupiedPositions model =
-    Dict.values model.players
-        |> List.map .point
-        |> Set.fromList
-
-
-spawnPoint : Model -> HexGrid.Point
-spawnPoint model =
-    let
-        candidates =
-            HexGrid.foldl (\point _ acc -> point :: acc) [] model.grid
-                |> List.sortBy (HexGrid.distance ( 0, 0 ))
-
-        blockedPositions =
-            occupiedPositions model
-
-        isFree point =
-            not (Set.member point model.obstacles)
-                && not (Set.member point blockedPositions)
-    in
-    candidates
-        |> List.filter isFree
-        |> List.head
-        |> Maybe.withDefault ( 0, 0 )

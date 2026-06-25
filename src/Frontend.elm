@@ -3,7 +3,7 @@ module Frontend exposing (Model, app)
 import Browser.Dom
 import Config as Conf
 import Dict
-import Helpers as Help
+import FrontendHelpers as Help
 import HexGrid
 import Html exposing (Html)
 import Html.Attributes as Hattr
@@ -342,6 +342,7 @@ viewFogOfWar model =
                             "white"
                     ]
                     []
+
                 -- players
                 , if point == model.thisPlayer.point then
                     Svg.circle

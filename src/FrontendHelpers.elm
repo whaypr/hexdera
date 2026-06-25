@@ -1,4 +1,4 @@
-module Helpers exposing (..)
+module FrontendHelpers exposing (..)
 
 import Config as Conf
 import HexGrid
