@@ -22,28 +22,12 @@ pageRoot =
     ]
 
 
-gameShell : List (Html.Attribute msg)
-gameShell =
-    [ Hattr.style "width" "100%"
-    , Hattr.style "display" "flex"
-    , Hattr.style "justify-content" "center"
-    , Hattr.style "align-items" "stretch"
-    , Hattr.style "gap" "24px"
-    , Hattr.style "flex-wrap" "wrap"
-    , Hattr.style "outline" "none"
-    ]
-
-
-boardSvg : List (Svg.Attribute msg)
-boardSvg =
-    [ Sattr.style """
-        display: block;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 2px solid rgba(255, 255, 255, 0.12);
-        background: #000000;
-        box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35), 0 2px 8px rgba(15, 23, 42, 0.2);
-        """
+playerNameTag : List (Svg.Attribute msg)
+playerNameTag =
+    [ Sattr.fill "#f8fafc"
+    , Sattr.stroke "rgba(2, 6, 23, 0.92)"
+    , Sattr.style "font-family: Georgia, serif; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; paint-order: stroke fill;"
+    , Sattr.textAnchor "middle"
     ]
 
 
@@ -83,16 +67,72 @@ hudValue =
     ]
 
 
+inventoryPanel : List (Html.Attribute msg)
+inventoryPanel =
+    [ Hattr.style "min-width" "220px"
+    , Hattr.style "padding" "18px 20px"
+    , Hattr.style "border-radius" "20px"
+    , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.12)"
+    , Hattr.style "background" "rgba(2, 6, 23, 0.48)"
+    , Hattr.style "backdrop-filter" "blur(12px)"
+    , Hattr.style "box-shadow" "0 24px 60px rgba(2, 6, 23, 0.25)"
+    , Hattr.style "display" "flex"
+    , Hattr.style "flex-direction" "column"
+    , Hattr.style "justify-content" "flex-start"
+    , Hattr.style "gap" "12px"
     ]
 
 
+inventoryButton : List (Html.Attribute msg)
+inventoryButton =
+    [ Hattr.style "padding" "10px 14px"
+    , Hattr.style "border-radius" "12px"
+    , Hattr.style "border" "1px solid rgba(255, 255, 255, 0.14)"
+    , Hattr.style "background" "rgba(15, 23, 42, 0.46)"
+    , Hattr.style "color" "#f8fafc"
+    , Hattr.style "font-size" "15px"
+    , Hattr.style "font-weight" "700"
+    , Hattr.style "cursor" "pointer"
+    , Hattr.style "text-align" "left"
     ]
 
 
-playerNameTag : List (Svg.Attribute msg)
-playerNameTag =
-    [ Sattr.fill "#f8fafc"
-    , Sattr.stroke "rgba(2, 6, 23, 0.92)"
-    , Sattr.style "font-family: Georgia, serif; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; paint-order: stroke fill;"
-    , Sattr.textAnchor "middle"
+inventoryButtonSelected : List (Html.Attribute msg)
+inventoryButtonSelected =
+    [ Hattr.style "background" "linear-gradient(135deg, rgba(34, 197, 94, 0.32), rgba(22, 163, 74, 0.5))"
+    , Hattr.style "border" "1px solid rgba(74, 222, 128, 0.5)"
+    ]
+
+
+inventoryButtonDescription : List (Html.Attribute msg)
+inventoryButtonDescription =
+    [ Hattr.style "font-size" "12px"
+    , Hattr.style "font-weight" "500"
+    , Hattr.style "opacity" "0.78"
+    , Hattr.style "margin-top" "4px"
+    ]
+
+
+boardSvg : List (Svg.Attribute msg)
+boardSvg =
+    [ Sattr.style """
+        display: block;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.12);
+        background: #000000;
+        box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35), 0 2px 8px rgba(15, 23, 42, 0.2);
+        """
+    ]
+
+
+gameShell : List (Html.Attribute msg)
+gameShell =
+    [ Hattr.style "width" "100%"
+    , Hattr.style "display" "flex"
+    , Hattr.style "justify-content" "center"
+    , Hattr.style "align-items" "stretch"
+    , Hattr.style "gap" "24px"
+    , Hattr.style "flex-wrap" "wrap"
+    , Hattr.style "outline" "none"
     ]

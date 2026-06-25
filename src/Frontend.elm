@@ -370,6 +370,34 @@ viewGame model =
         ]
 
 
+viewInventoryPanel : Model -> Html Msg
+viewInventoryPanel model =
+    let
+        blockButton blockType label description =
+            Html.button
+                (Styles.inventoryButton
+                    ++ (if model.selectedBlock == blockType then
+                            Styles.inventoryButtonSelected
+
+                        else
+                            []
+                       )
+                    ++ [ Hevent.onClick (SelectBlock blockType) ]
+                )
+                [ Html.div [] [ Html.text label ]
+                , Html.div
+                    Styles.inventoryButtonDescription
+                    [ Html.text description ]
+                ]
+    in
+    Html.div
+        Styles.inventoryPanel
+        [ Html.h3 Styles.hudLabel [ Html.text "Inventory" ]
+        , blockButton Wall "Wall" "Blocks movement and sight"
+        , blockButton Hideout "Hideout" "Provides cover"
+        ]
+
+
 viewFogOfWar : Model -> Svg Msg
 viewFogOfWar model =
     let
